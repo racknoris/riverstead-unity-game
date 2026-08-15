@@ -49,3 +49,5 @@ sysinfo.txt
 
 # macOS
 .DS_Store
+# IDE solution files
+*.slnx

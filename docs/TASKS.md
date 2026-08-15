@@ -10,19 +10,29 @@ Record material architectural deviations here **before** implementing them: deci
 
 ## Milestone 0: Project Baseline
 
-- [ ] Create a Unity 6.5 project from the **2D URP** template.
-- [ ] `git init` immediately: Unity `.gitignore`, Git LFS for binary assets, first commit before any other work.
-- [ ] Editor settings: Force Text serialization, Visible Meta Files.
-- [ ] Add packages: Input System, UI Toolkit (built in), Unity Test Framework, `com.unity.nuget.newtonsoft-json`.
-- [ ] Create the asmdef structure from `docs/ARCHITECTURE.md` §13 (Domain, Runtime, UI, Spike, Tests). Verify Domain compiles with no UnityEngine reference.
-- [ ] Add one trivial edit-mode test and document the test command in the README (Unity CLI `-runTests -testPlatform EditMode`).
-- [ ] Physics 2D settings: confirm fixed timestep; record solver iteration counts in `docs/CONVENTIONS.md` once tuned.
+- [x] Create a Unity 6.5 project from the **2D URP** template. (`6000.5.8f1`)
+- [x] `git init` immediately: Unity `.gitignore`, ~~Git LFS for binary assets~~, first commit before any other work. **LFS deferred — see `docs/ISSUES.md` #2.**
+- [x] Editor settings: Force Text serialization, Visible Meta Files. (Both already correct from the template; verified, not assumed.)
+- [x] Add packages: Input System (1.20.0), UI Toolkit (built in), Unity Test Framework (1.7.0), `com.unity.nuget.newtonsoft-json` (3.2.1, added).
+- [x] Create the asmdef structure from `docs/ARCHITECTURE.md` §13 (Domain, Runtime, UI, Spike, Tests). Verify Domain compiles with no UnityEngine reference.
+- [x] Add one trivial edit-mode test and document the test command in the README (Unity CLI `-runTests -testPlatform EditMode`).
+- [x] Physics 2D settings: confirm fixed timestep; record solver iteration counts in `docs/CONVENTIONS.md` once tuned. (Baseline defaults recorded; tuned values pending Milestone 1.)
 
 ### Done when
 
-- The project builds for Windows and Android target is configured.
-- The edit-mode test suite runs from the command line.
-- Everything is committed.
+- ~~The project builds for Windows~~ and Android target is configured. **Windows build support is not installed on this machine — `docs/ISSUES.md` #1.** Android, Mac and WebGL modules are installed; Android orientation is locked to landscape.
+- [x] The edit-mode test suite runs from the command line. 2 tests, both passing; command documented in `README.md`.
+- [x] Everything is committed.
+
+**Notes.** The Domain no-UnityEngine rule is enforced twice: `noEngineReferences: true`
+in the asmdef (compile time) and `DomainAssembly_Always_DoesNotReferenceUnityEngine`
+(test time). Per `docs/CONVENTIONS.md`, that guard was only trusted after being observed
+to fail: flipping `noEngineReferences` to `false` and adding a field of type
+`UnityEngine.Vector2` to a Domain type made it fail with
+`Found: UnityEngine.CoreModule`. The violation was then reverted and the suite re-run green.
+
+Nullable reference types are enabled in Domain via `Assets/_Project/Domain/csc.rsp`
+(asmdefs have no nullable toggle).
 
 ## Milestone 1: Fun Checkpoint — Go/No-Go (throwaway)
 

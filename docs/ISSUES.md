@@ -14,7 +14,8 @@ State at project start. Nothing built yet.
 
 | # | Issue | Notes |
 | --- | --- | --- |
-| — | — | — |
+| 1 | **Windows Standalone build module is not installed.** The Unity 6000.5.8f1 install has only `AndroidPlayer`, `MacStandaloneSupport`, `WebGLSupport`. Milestone 0's "builds for Windows" cannot be satisfied on this machine. | Open. Dev machine is macOS, so the *desktop development loop* role from `ARCHITECTURE.md` §3 is filled by the Mac standalone player. Install the Windows Build Support module via Unity Hub if a Windows player is genuinely needed; the gating platforms for the POC verdict are Android and Unity Web, both installed. |
+| 2 | **Git LFS is not installed** (`git lfs` is not a command). `CONVENTIONS.md` requires LFS for textures, audio, and binary assets. | Open, not yet blocking — the repo currently has no binary assets. Deliberately did **not** add a `.gitattributes` with LFS filters, because committing LFS filter rules without the LFS client installed corrupts those files on checkout. Install `git-lfs` and add `.gitattributes` *before* the first texture or audio file lands (Milestone 1 art, at the latest). |
 
 ## Risks carried over from the previous project
 

@@ -56,5 +56,15 @@ Style and project conventions, aligned with Unity's published C# style guide and
 - Fixed timestep and solver iteration counts are set once in Project Settings,
   recorded here when tuned in Milestone 1, and revisited during Milestone 10
   device profiling:
-  - Fixed Timestep: *(default 0.02 until tuned)*
-  - Velocity / Position iterations: *(record after checkpoint)*
+  - Fixed Timestep: `0.02` (Unity default, unchanged in Milestone 0; revisit in Milestone 1)
+  - Velocity / Position iterations: `8` / `3` (Unity defaults, recorded in Milestone 0
+    as the pre-tuning baseline; the tuned values go here after the Milestone 1
+    joint verification)
+  - Gravity: `(0, -9.81)`
+
+## Platform settings (recorded in Milestone 0)
+
+- Asset Serialization: Force Text. Version Control: Visible Meta Files.
+- Mobile orientation: landscape only — auto-rotation on, both landscape rotations
+  allowed, both portrait rotations disabled (`ARCHITECTURE.md` §3).
+- Scripting API compatibility level: .NET Standard 2.1.
