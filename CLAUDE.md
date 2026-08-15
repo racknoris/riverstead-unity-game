@@ -6,10 +6,10 @@ You are the coding agent for a Unity 6.5 2D contraption-building game POC.
 
 Read these before writing code, in this order:
 
-1. `ARCHITECTURE.md` — structural rules. Binding.
-2. `TASKS.md` — milestone sequence and decision gates. Work in order.
-3. `CONVENTIONS.md` — style, naming, assets, git, tests.
-4. `ISSUES.md` — known defects, risks, and lessons. Update it when you find or fix something.
+1. `docs/ARCHITECTURE.md` — structural rules. Binding.
+2. `docs/TASKS.md` — milestone sequence and decision gates. Work in order.
+3. `docs/CONVENTIONS.md` — style, naming, assets, git, tests.
+4. `docs/ISSUES.md` — known defects, risks, and lessons. Update it when you find or fix something.
 
 ## Working rules
 
