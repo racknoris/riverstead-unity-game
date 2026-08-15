@@ -38,11 +38,41 @@ Nullable reference types are enabled in Domain via `Assets/_Project/Domain/csc.r
 
 All code in `Assets/_Project/Spike/`. Exempt from structural rules; deleted in one commit after the verdict.
 
-- [ ] Crude horizontal course: flat ground, one ramp, one gap, finish marker.
-- [ ] 3–4 hard-coded contraption variants assembled in code: powered wheels + chassis; chassis + hinged arm; chassis + welded beam chain; chassis + spring part.
-- [ ] Fragile cargo box with simple impact damage and a health number on screen.
-- [ ] One-tap restart that destroys and rebuilds the whole simulation.
-- [ ] Variant switcher (cycle button is enough).
+- [x] Crude horizontal course: flat ground, one ramp, one gap, finish marker. Plus two bumps on the run-in and a back wall.
+- [x] 3–4 hard-coded contraption variants assembled in code: powered wheels + chassis; chassis + hinged arm; chassis + welded beam chain; chassis + spring part. **All four include the powered-wheel drive** — a chassis that cannot attempt the course answers neither the fun question nor the joint question.
+- [x] Fragile cargo box with simple impact damage and a health number on screen. Damage applies above a 2.5 units/s impact threshold, so ordinary rolling contact is free and only hard landings hurt.
+- [x] One-tap restart that destroys and rebuilds the whole simulation. Restart destroys `SimulationRoot` and rebuilds — the checkpoint deliberately honours `ARCHITECTURE.md` §8 here, because that is one of the things it exists to test.
+- [x] Variant switcher (cycle button is enough).
+
+#### Headless variant sweep
+
+Verified by building a desktop player, instrumenting it to auto-cycle the variants, and
+running it headless. Final state — all four complete the course:
+
+| Variant | Result | Time | Cargo health |
+| --- | --- | --- | --- |
+| Powered wheels | Finished | 22.5 s | 89 / 100 |
+| Hinged arm | Finished | 23.6 s | 81 / 100 |
+| Welded beam chain | Finished | 22.7 s | 96 / 100 |
+| Spring suspension | Finished | 22.3 s | 91 / 100 |
+
+The sweep paid for itself three times, and every bug it found was mine rather than Unity's:
+
+1. **Wheels mounted at `+0.45` instead of `-0.62`** — inside the cargo tray rather than under
+   the chassis. Every machine sat on its belly and ground its own cargo to pieces without
+   moving (`cargoX=0.0`, health 2–55). The chassis-local frame is now written down as named
+   constants in `SpikeContraptions` instead of being re-derived at each call site.
+2. **Bumps 0.35–0.45 high against a 0.45 wheel radius** — walls, not bumps. Now ~0.2.
+3. **A rotated ramp box whose upper end poked 0.18 above the plateau it met.** That lip
+   launched the bare rover into a backflip it could never recover from; the trace showed it
+   inverted at `rot=-178` and motionless for 55 straight seconds. This one is worth
+   remembering: it presents exactly like a physics or joint defect, and it was a content bug.
+   The ramp is now derived from its two surface endpoints so it meets adjoining geometry flush
+   by construction. The wheelbase was also widened from ±1.00 to ±1.15.
+
+The lesson generalises past the spike: **when a machine misbehaves, suspect the level geometry
+before suspecting the solver.** Two of the three bugs above were invisible in a still frame and
+obvious in a two-second position trace.
 - [x] **Joint verification** (this killed the last stack — prove it early):
   - [x] `FixedJoint2D` weld chain under load: measure droop angle; record it. **1.30°** at the tuned 16/8 solver iterations (6.18° at Unity's defaults). Full table in `docs/ISSUES.md`.
   - [x] `HingeJoint2D` with `useLimits` under motor load: no launching, limits respected; record swing. **Overshoot 0.056° past a ±45° limit, anchor drift 0.0000 units**, under a deliberately over-powered 900°/s, 10 000-torque motor.
