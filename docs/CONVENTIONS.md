@@ -56,11 +56,23 @@ Style and project conventions, aligned with Unity's published C# style guide and
 - Fixed timestep and solver iteration counts are set once in Project Settings,
   recorded here when tuned in Milestone 1, and revisited during Milestone 10
   device profiling:
-  - Fixed Timestep: `0.02` (Unity default, unchanged in Milestone 0; revisit in Milestone 1)
-  - Velocity / Position iterations: `8` / `3` (Unity defaults, recorded in Milestone 0
-    as the pre-tuning baseline; the tuned values go here after the Milestone 1
-    joint verification)
+  - Fixed Timestep: `0.02` (Unity default; unchanged — the joint measurements were
+    taken at this step and it proved sufficient)
+  - Velocity / Position iterations: **`16` / `8`** — tuned in Milestone 1, raised from
+    Unity's `8`/`3`. This is the *only* effective lever on weld stiffness: it cut
+    welded-chain droop from 6.18° to 1.30° and hinge limit overshoot from 1.736° to
+    0.056°. Do not lower it without re-reading the measurement table in `docs/ISSUES.md`;
+    `JointFidelityTests.Physics2DSettings_Always_KeepTunedSolverIterations` fails if you do.
+    Cost on mobile is unverified until the Milestone 10 device profile.
   - Gravity: `(0, -9.81)`
+
+### Joint tuning rules (from the Milestone 1 measurements)
+
+- **Never set `FixedJoint2D.frequency` to make a weld stiffer.** `0` (the default) *is* the
+  rigid setting; finite values are soft springs. See `docs/ISSUES.md` L1.
+- `motorSpeed` sets drive speed; `maxMotorTorque` buys climbing and load capacity, not speed.
+  Tune them as separate concerns in `PartDefinitionAsset`.
+- Wheels need an explicit friction `PhysicsMaterial2D`. Unmaterialed wheels spin in place.
 
 ## Platform settings (recorded in Milestone 0)
 

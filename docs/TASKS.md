@@ -43,11 +43,35 @@ All code in `Assets/_Project/Spike/`. Exempt from structural rules; deleted in o
 - [ ] Fragile cargo box with simple impact damage and a health number on screen.
 - [ ] One-tap restart that destroys and rebuilds the whole simulation.
 - [ ] Variant switcher (cycle button is enough).
-- [ ] **Joint verification** (this killed the last stack — prove it early):
-  - [ ] `FixedJoint2D` weld chain under load: measure droop angle; record it.
-  - [ ] `HingeJoint2D` with `useLimits` under motor load: no launching, limits respected; record swing.
-  - [ ] Motorised wheel torque feels controllable.
-  - [ ] Each verification is a play-mode test that **fails when the assertion is inverted** (a test that cannot fail proves nothing).
+- [x] **Joint verification** (this killed the last stack — prove it early):
+  - [x] `FixedJoint2D` weld chain under load: measure droop angle; record it. **1.30°** at the tuned 16/8 solver iterations (6.18° at Unity's defaults). Full table in `docs/ISSUES.md`.
+  - [x] `HingeJoint2D` with `useLimits` under motor load: no launching, limits respected; record swing. **Overshoot 0.056° past a ±45° limit, anchor drift 0.0000 units**, under a deliberately over-powered 900°/s, 10 000-torque motor.
+  - [x] Motorised wheel torque feels controllable. **5.50 units in 3 s, top speed 2.40 units/s** at 360°/s. Numbers pinned; the *feel* half of this is still a human judgement and belongs to the verdict below.
+  - [x] Each verification is a play-mode test that **fails when the assertion is inverted** (a test that cannot fail proves nothing).
+
+#### Joint verification notes
+
+Tests live in `Assets/_Project/Tests/PlayMode/JointFidelityTests.cs` — deliberately **not**
+in `Spike/`. They verify Unity's Physics 2D, not spike code, so they must survive the spike's
+deletion. They build their own rigs and step physics with `Physics2D.Simulate` so results are
+deterministic rather than frame-paced.
+
+**Inversion proof.** All **nine** assertions were observed failing, in three passes, so that
+no assertion was masked by an earlier one short-circuiting its test:
+
+1. Primary assertion of each of the 5 tests inverted → all 5 failed.
+2. The 4 secondary assertions inverted → all 3 tests containing one failed.
+3. The chassis-height assertion inverted alone → its test failed. (Needed separately: NUnit
+   stops at the first failed assert, so pass 2 left it unproven.)
+
+The suite was restored and re-run green after each pass.
+
+**Two findings changed the design**, both the opposite of the obvious reading, both recorded
+as `docs/ISSUES.md` L1 and L2: `FixedJoint2D.frequency` is inverted (0 = rigid), and the
+hinge motor sign convention is backwards from the naive guess. The first one matters most —
+it means `ARCHITECTURE.md` §10's fallback plan ("or `RelativeJoint2D` if stiffness
+disappoints") is **not needed**. Weld stiffness was never a joint-parameter problem; it was a
+solver-iteration problem, now fixed project-wide at 16/8.
 - [ ] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `docs/ISSUES.md`.
 
 ### Done when
