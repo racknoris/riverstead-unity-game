@@ -15,10 +15,10 @@ Read these before writing code, in this order:
 
 - Complete milestones in order. **Milestone 1's go/no-go verdict blocks everything after it.**
 - Prefer the smallest implementation that satisfies the current milestone.
-- Record material architectural deviations in `TASKS.md` under "Recorded Deviations" *before* implementing them.
+- Record material architectural deviations in `docs/TASKS.md` under "Recorded Deviations" *before* implementing them.
 - Keep commits small and coherent; commit after every task, never leave work uncommitted at the end of a session.
 - Run the edit-mode test suite after every milestone (command documented in the README) and relevant play-mode tests when physics or lifecycle changed.
-- When you discover a defect, log it in `ISSUES.md` with a number, status, and evidence before working around it.
+- When you discover a defect, log it in `docs/ISSUES.md` with a number, status, and evidence before working around it.
 
 ## Hard constraints (never violate)
 
@@ -31,4 +31,4 @@ Read these before writing code, in this order:
 
 ## Definition of done for any task
 
-Code compiles for Windows and Android targets; tests pass; conventions followed; committed; `ISSUES.md`/`TASKS.md` updated if state changed.
+Code compiles for Windows and Android targets; tests pass; conventions followed; committed; `docs/ISSUES.md`/`docs/TASKS.md` updated if state changed.

@@ -26,7 +26,7 @@ Style and project conventions, aligned with Unity's published C# style guide and
 
 - `Contraption.Domain` must not reference UnityEngine — this is the load-bearing rule of the whole project.
 - Dependency direction: UI → Runtime → Domain. Never the reverse. `Spike` is referenced by nothing.
-- New asmdefs require a recorded deviation in `TASKS.md`.
+- New asmdefs require a recorded deviation in `docs/TASKS.md`.
 
 ## Assets and folders
 

@@ -26,7 +26,7 @@ State at project start. Nothing built yet.
 
 ## Planned work, not defects
 
-Tracked in `TASKS.md`; do not duplicate milestones here.
+Tracked in `docs/TASKS.md`; do not duplicate milestones here.
 
 ## Suggested order
 

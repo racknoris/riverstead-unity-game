@@ -1,6 +1,6 @@
 # Contraption Game POC Tasks (Unity)
 
-Agent working rules live in `CLAUDE.md`. Architecture rules live in `ARCHITECTURE.md`. Style and project conventions live in `CONVENTIONS.md`. Defects and risks live in `ISSUES.md`.
+Agent working rules live in `CLAUDE.md` (project root). Architecture rules live in `docs/ARCHITECTURE.md`. Style and project conventions live in `docs/CONVENTIONS.md`. Defects and risks live in `docs/ISSUES.md`.
 
 ## Recorded Deviations
 
@@ -14,9 +14,9 @@ Record material architectural deviations here **before** implementing them: deci
 - [ ] `git init` immediately: Unity `.gitignore`, Git LFS for binary assets, first commit before any other work.
 - [ ] Editor settings: Force Text serialization, Visible Meta Files.
 - [ ] Add packages: Input System, UI Toolkit (built in), Unity Test Framework, `com.unity.nuget.newtonsoft-json`.
-- [ ] Create the asmdef structure from `ARCHITECTURE.md` §13 (Domain, Runtime, UI, Spike, Tests). Verify Domain compiles with no UnityEngine reference.
+- [ ] Create the asmdef structure from `docs/ARCHITECTURE.md` §13 (Domain, Runtime, UI, Spike, Tests). Verify Domain compiles with no UnityEngine reference.
 - [ ] Add one trivial edit-mode test and document the test command in the README (Unity CLI `-runTests -testPlatform EditMode`).
-- [ ] Physics 2D settings: confirm fixed timestep; record solver iteration counts in `CONVENTIONS.md` once tuned.
+- [ ] Physics 2D settings: confirm fixed timestep; record solver iteration counts in `docs/CONVENTIONS.md` once tuned.
 
 ### Done when
 
@@ -38,7 +38,7 @@ All code in `Assets/_Project/Spike/`. Exempt from structural rules; deleted in o
   - [ ] `HingeJoint2D` with `useLimits` under motor load: no launching, limits respected; record swing.
   - [ ] Motorised wheel torque feels controllable.
   - [ ] Each verification is a play-mode test that **fails when the assertion is inverted** (a test that cannot fail proves nothing).
-- [ ] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `ISSUES.md`.
+- [ ] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `docs/ISSUES.md`.
 
 ### Done when
 
@@ -50,7 +50,7 @@ All code in `Assets/_Project/Spike/`. Exempt from structural rules; deleted in o
 
 ## Milestone 2: Immutable Blueprint Models
 
-- [ ] Domain models from `ARCHITECTURE.md` §7 with value equality and stable IDs.
+- [ ] Domain models from `docs/ARCHITECTURE.md` §7 with value equality and stable IDs.
 - [ ] JSON serialization with schema version; round-trip tests (serialize → deserialize → equal).
 - [ ] A malformed/old-version payload fails loudly with a typed error, not silently.
 
@@ -131,7 +131,7 @@ All code in `Assets/_Project/Spike/`. Exempt from structural rules; deleted in o
 ## Milestone 10: Device and Performance Pass
 
 - [ ] Android build: touch feel review, landscape lock, safe-area check.
-- [ ] Profile on the real device; record frame time and physics cost in `ISSUES.md`. (Last project shipped a milestone with unverified mobile frame rate — do not repeat.)
+- [ ] Profile on the real device; record frame time and physics cost in `docs/ISSUES.md`. (Last project shipped a milestone with unverified mobile frame rate — do not repeat.)
 - [ ] Unity Web build verified as the tester link.
 
 ### Done when

@@ -55,7 +55,7 @@ Do not depend on browser-only APIs. Do not tune against mobile browser.
 - **Unity Test Framework** for edit-mode and play-mode tests.
 - **com.unity.nuget.newtonsoft-json** for blueprint serialization (JsonUtility cannot handle dictionaries or polymorphism).
 
-Do not add DOTS/ECS, Addressables, a DI container, or a reactive framework in the POC. Add a package only after recording the decision in `TASKS.md`.
+Do not add DOTS/ECS, Addressables, a DI container, or a reactive framework in the POC. Add a package only after recording the decision in `docs/TASKS.md`.
 
 ## 5. Central Architectural Rule
 
@@ -196,7 +196,7 @@ Nothing outside `Spike/` may reference `Contraption.Spike`. The asmdef graph enf
 
 ## 14. Fun Checkpoint
 
-Before building the editor, run the fun checkpoint (`TASKS.md` Milestone 1): a deliberately throwaway playable slice with hard-coded contraption variants, a crude course, and a one-tap restart, used to record a go/no-go verdict on the core loop **and** to verify Unity's 2D joints under motorised multi-joint load.
+Before building the editor, run the fun checkpoint (`docs/TASKS.md` Milestone 1): a deliberately throwaway playable slice with hard-coded contraption variants, a crude course, and a one-tap restart, used to record a go/no-go verdict on the core loop **and** to verify Unity's 2D joints under motorised multi-joint load.
 
 Checkpoint code is exempt from the structural rules here, lives entirely in `Spike/`, and is deleted in one commit after the verdict. It must still not leak Unity types into the domain assembly (the asmdef makes this impossible anyway). Tuning constants are re-derived into the catalog deliberately, not copy-pasted.
 
