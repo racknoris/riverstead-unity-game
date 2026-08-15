@@ -102,7 +102,7 @@ hinge motor sign convention is backwards from the naive guess. The first one mat
 it means `ARCHITECTURE.md` §10's fallback plan ("or `RelativeJoint2D` if stiffness
 disappoints") is **not needed**. Weld stiffness was never a joint-parameter problem; it was a
 solver-iteration problem, now fixed project-wide at 16/8.
-- [ ] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `docs/ISSUES.md`.
+- [ ] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `docs/ISSUES.md`. **Blocked on hardware — needs a human with a phone.** Everything on this side is ready: scripts compile against the Android target, the SDK and NDK ship with the installed module, orientation is locked to landscape, and `Assets/_Project/Scenes/Spike.unity` is scene 0 in Build Settings. The HUD is IMGUI, whose buttons take touch, so Restart and Next variant work without an EventSystem.
 
 ### Done when
 
@@ -110,7 +110,26 @@ solver-iteration problem, now fixed project-wide at 16/8.
 - **Go/No-Go decision recorded. No milestone past this line starts before "Go".**
 - `Spike/` deleted in one commit after tuning values are noted for Milestone 3.
 
-**Verdict:** *(pending)*
+**Verdict:** *(pending — this is a human judgement and is deliberately not being written by the agent.)*
+
+Half of it can already be answered from evidence, and half cannot:
+
+- **Are the joints trustworthy? Yes**, with recorded numbers rather than assurances — see the
+  joint verification notes above and the measurement table in `docs/ISSUES.md`. Welds hold to
+  1.30°, hinge limits hold under a deliberately over-powered motor to 0.056° of overshoot with
+  zero anchor drift, and motorised drive is stable and controllable. `ARCHITECTURE.md` §10's
+  `RelativeJoint2D` fallback is not needed. The one caveat is that these are desktop numbers;
+  the solver was raised to 16/8 iterations and **that cost is unmeasured on a phone.**
+- **Is tinker-retry fun? Unknown, and not answerable from a headless sweep.** All four variants
+  complete the course, which establishes that the slice *works*, not that it is *enjoyable*.
+  The honest read is that the spike currently under-tests the question: the variants are fixed
+  and the machine is autonomous, so a run is watched rather than played, and every variant now
+  finishes on the first try with 81–96 health. Nobody has yet had a reason to retry. Worth
+  keeping in mind while playing it — if the loop feels flat, the likely cause is that there is
+  nothing to tune between runs, which is precisely what Milestone 6 adds.
+
+**To play it:** open `Assets/_Project/Scenes/Spike.unity` and press Play. `R` or `Space`
+restarts, `Tab` cycles variants; on a device, use the two on-screen buttons.
 
 ## Milestone 2: Immutable Blueprint Models
 
