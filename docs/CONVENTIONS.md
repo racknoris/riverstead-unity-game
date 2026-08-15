@@ -53,6 +53,8 @@ Style and project conventions, aligned with Unity's published C# style guide and
 
 ## Physics settings (record, don't scatter)
 
-- Fixed timestep and solver iteration counts are set once in Project Settings and recorded here when tuned in Milestone 1:
+- Fixed timestep and solver iteration counts are set once in Project Settings,
+  recorded here when tuned in Milestone 1, and revisited during Milestone 10
+  device profiling:
   - Fixed Timestep: *(default 0.02 until tuned)*
   - Velocity / Position iterations: *(record after checkpoint)*
