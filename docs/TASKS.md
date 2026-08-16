@@ -232,13 +232,46 @@ obstacles protruding ~0.2, finish at x 58.
 
 ## Milestone 4: Simulation Builders
 
-- [ ] `SimulationBuilder.Build(level, blueprint)` producing everything under one `SimulationRoot`.
-- [ ] `PartViewFactory`, `BodyBuilder`, `JointBuilder`; joints created after all bodies, one deterministic pass.
-- [ ] Build → run → destroy → rebuild cycle is leak-free (play-mode test: repeated rebuilds do not accumulate GameObjects or joints).
+- [x] `SimulationBuilder.Build(level, blueprint)` producing everything under one `SimulationRoot`.
+- [x] `PartViewFactory`, `BodyBuilder`, `JointBuilder`; joints created after all bodies, one deterministic pass.
+- [x] Build → run → destroy → rebuild cycle is leak-free (play-mode test: repeated rebuilds do not accumulate GameObjects or joints).
 
 ### Done when
 
-- A hard-coded blueprint runs, resets, and rebuilds cleanly through the builders.
+- [x] A hard-coded blueprint runs, resets, and rebuilds cleanly through the builders. **49 tests green** across both suites.
+
+### Notes
+
+- **The two-pass order is load-bearing, not stylistic.** A joint needs both its bodies to exist,
+  so building them interleaved would make a blueprint's validity depend on the order its parts
+  happen to be listed in. Both passes walk the blueprint in order, so the same blueprint always
+  produces the same object graph.
+- **The leak test was observed failing before being trusted.** Removing the `SetParent` call in
+  `BodyBuilder` — so bodies escape the root — made both `PutsEverythingUnderOneRoot` and
+  `RepeatedRebuilds_LeaveNothingBehind` fail; the code was then restored and the suite re-run
+  green. A leak test that has never leaked proves nothing, which is exactly the trap
+  `docs/ISSUES.md` records from the previous project.
+- **Milestone 1's findings are now enforced by tests, not comments.** A test asserts the weld's
+  `frequency` is still 0 (L1: non-zero makes welds *softer*), another asserts a powered wheel's
+  `motorSpeed` is positive (L2: positive drives +X), and another asserts every body interpolates
+  (L3: otherwise fast parts visibly stutter). Each would have been a silent regression.
+- **Physics materials are shared per friction value**, not created per body. A material per part
+  would be a fresh asset on every rebuild — a slow leak that only appears after many resets.
+- **Sprites are generated once and cached statically** for the same reason.
+- **Views hang off a scaled child**, never the body itself, because transform scale multiplies
+  collider dimensions. Sizing a sprite by scaling its body silently resizes its physics.
+
+### Known gap, carried to Milestone 6
+
+Joints anchor at the parts' **placed positions**, not at hole geometry: the catalog records hole
+*ids* but not where those holes sit on a part. That is sufficient to build a correct machine from
+a blueprint, and it is what the attachment already expresses. Hole positions become necessary
+when the player taps a specific hole to place a part, so `PartDefinitionAsset` needs a hole
+layout — position and probably facing per hole — before Milestone 6's editor can work.
+
+`_prefab` is still unassigned on every catalog asset; `PartViewFactory` falls back to generated
+primitives sized from catalog data. Prefabs remain optional and are honoured the moment one is
+assigned, so real art is a drop-in rather than a code change.
 
 ## Milestone 5: Game Flow
 
