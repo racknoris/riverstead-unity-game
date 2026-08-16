@@ -110,9 +110,16 @@ solver-iteration problem, now fixed project-wide at 16/8.
 - **Go/No-Go decision recorded. No milestone past this line starts before "Go".**
 - `Spike/` deleted in one commit after tuning values are noted for Milestone 3.
 
-**Verdict:** *(pending — this is a human judgement and is deliberately not being written by the agent.)*
+**Verdict: GO.** Recorded 2026-08-16 by the project owner after playing the checkpoint on
+desktop and on an Android device.
 
-Half of it can already be answered from evidence, and half cannot:
+Both halves of the question came back positive: the joints are trustworthy with recorded
+numbers rather than assurances, and the loop was judged worth continuing with. Performance on
+device is comfortable — roughly 3× frame-time headroom, physics at ~1% of budget.
+
+Milestones 2 onward are unblocked.
+
+The evidence behind the verdict, and its limits:
 
 - **Are the joints trustworthy? Yes**, with recorded numbers rather than assurances — see the
   joint verification notes above and the measurement table in `docs/ISSUES.md`. Welds hold to
@@ -144,6 +151,33 @@ restarts, `Tab` cycles variants; on a device, use the two on-screen buttons.
 ## Milestone 3: Part Catalog
 
 - [ ] `PartDefinitionAsset` ScriptableObjects for the seven initial parts, tuned from checkpoint numbers (re-derived, not pasted).
+
+### Checkpoint tuning values (harvested before `Spike/` was deleted)
+
+Recorded here because `ARCHITECTURE.md` §14 requires these to be **re-derived deliberately, not
+copy-pasted**. They are a starting point that produced a machine which crossed the course at
+~2.4 units/s in 22–24 s with cargo health 81–96 — not values that have earned a place in the
+catalog. The originals are in git at `5fdb726` if the context around one is ever needed.
+
+| Value | Checkpoint setting | Note |
+| --- | --- | --- |
+| Drive `motorSpeed` | 330 °/s | Sets speed. Yielded ~2.4 units/s ground speed. |
+| Drive `maxMotorTorque` | 120 | Buys climbing, **not** speed — above ~10 it stops affecting flat-ground travel (`docs/ISSUES.md`). Sized for the ramp. |
+| Wheel radius / mass | 0.45 / 0.6 | Obstacles above ~half the radius stop the machine; a full radius is a wall. |
+| Chassis mass | 2.2 | Tray: floor 2.8 × 0.30, walls 0.30 × 1.10 at ±1.25. |
+| Wheel mount | ±1.15, y −0.62 | Wheelbase is load-bearing for stability: ±1.00 tipped the bare rover over the plateau edge. |
+| Cargo | 1.1 × 1.1, mass 0.8 | |
+| Cargo damage | threshold 2.5 units/s, 9 HP per excess unit/s, 100 HP | Threshold matters: below it, ordinary rolling contact is free. |
+| Weld (`FixedJoint2D`) | **defaults, untouched** | `frequency` 0 = rigid. Never raise it (`docs/ISSUES.md` L1). |
+| Beam link | 0.9 × 0.18, mass 0.25, ×4 | |
+| Hinge arm | 1.8 × 0.22, mass 0.5, limits −35°/+55°, motor 120 °/s @ 260 torque | |
+| Spring suspension | `frequency` 3.5, `dampingRatio` 0.5, arm limits ±18°, arm mass 0.3 | Note `SpringJoint2D.frequency` is a genuine spring parameter, unlike `FixedJoint2D`'s. |
+| Wheel/ground friction | `PhysicsMaterial2D` friction 1.0, bounciness 0 | Required — unmaterialed wheels spin in place. |
+| Run time limit | 75 s | Course took 22–24 s, so this was generous. |
+
+Level-shape numbers, for whoever builds the real level in Milestone 8: plateau top at y 1.4,
+landing top at y 0.4 (a **1.0 drop** — at 1.5 the bare rover pitched onto its back every run),
+obstacles protruding ~0.2, finish at x 58.
 - [ ] `PartCatalog` asset as the single registry; a validation test asserting every `PartType` has an entry.
 - [ ] Each asset exposes a plain domain `PartDefinition`.
 
