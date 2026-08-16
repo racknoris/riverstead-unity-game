@@ -10,7 +10,7 @@ namespace Contraption.Tests.PlayMode
     /// These tests exist because joint fidelity killed the previous stack: weld stiffness,
     /// hinge limits under motor load, and multi-joint stability were assumed rather than
     /// measured. They verify Unity's Physics 2D behaviour directly and build their own rigs,
-    /// so they deliberately do NOT reference Contraption.Spike and survive its deletion.
+    /// which is why they outlived the Milestone 1 spike rather than being deleted with it.
     ///
     /// Physics is stepped manually via <see cref="Physics2D.Simulate"/> so a run is
     /// deterministic and does not depend on frame pacing.

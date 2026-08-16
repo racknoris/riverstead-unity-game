@@ -108,7 +108,7 @@ solver-iteration problem, now fixed project-wide at 16/8.
 
 - A written verdict is recorded below: is tinker-retry fun? Are the joints trustworthy?
 - **Go/No-Go decision recorded. No milestone past this line starts before "Go".**
-- `Spike/` deleted in one commit after tuning values are noted for Milestone 3.
+- [x] `Spike/` deleted in one commit after tuning values are noted for Milestone 3. Tuning values are recorded under Milestone 3; the spike is recoverable from git at `5fdb726`. `Scenes/Spike.unity` went with it, replaced by a placeholder `Scenes/Main.unity` holding only a camera so Build Settings still points at something real. The joint verification tests were **kept** — they test Unity, not spike code.
 
 **Verdict: GO.** Recorded 2026-08-16 by the project owner after playing the checkpoint on
 desktop and on an Android device.

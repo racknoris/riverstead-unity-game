@@ -22,7 +22,6 @@ never the reverse.
 | `Contraption.Domain` | `Assets/_Project/Domain/` | **nothing** — `noEngineReferences: true` |
 | `Contraption.Runtime` | `Assets/_Project/Runtime/` | Domain |
 | `Contraption.UI` | `Assets/_Project/UI/` | Domain, Runtime |
-| `Contraption.Spike` | `Assets/_Project/Spike/` | nothing references it; deleted after the Milestone 1 verdict |
 | `Contraption.Tests.EditMode` | `Assets/_Project/Tests/EditMode/` | Domain |
 | `Contraption.Tests.PlayMode` | `Assets/_Project/Tests/PlayMode/` | Domain, Runtime |
 
@@ -72,15 +71,14 @@ every other flag is identical.
 
 ### In the editor
 
-Open `Assets/_Project/Scenes/Spike.unity` and press Play. Play mode runs whatever scene is
+Open `Assets/_Project/Scenes/Main.unity` and press Play. Play mode runs whatever scene is
 currently *open*, which is not necessarily the one a player build uses — a build uses scene 0
 from Build Settings. Opening the wrong scene renders a bare background and looks like a broken
-build.
+build; that one costs about ten minutes of confusion the first time.
 
-The scene contains a single `SpikeBootstrap` object; the camera, course and contraption are all
-created at runtime, so an almost-empty Hierarchy before pressing Play is correct.
-
-`R` or `Space` restarts, `Tab` cycles variants. On a touch device, use the on-screen buttons.
+`Main` is currently a placeholder holding only a camera. It gets its contents from Milestone 4
+onward. The Milestone 1 spike that used to live here was deleted after the Go verdict, per
+`ARCHITECTURE.md` §14 — it is recoverable from git at `5fdb726` if you ever want to see it run.
 
 ### Desktop player
 
@@ -92,7 +90,7 @@ From the command line — Unity must be **closed**, since the CLI needs the proj
 "/Applications/Unity/Hub/Editor/6000.5.8f1/Unity.app/Contents/MacOS/Unity" \
   -batchmode -nographics -quit \
   -projectPath "$(pwd)" \
-  -buildOSXUniversalPlayer "$HOME/Desktop/SpikeMac.app" \
+  -buildOSXUniversalPlayer "$HOME/Desktop/Riverstead.app" \
   -logFile "$(pwd)/Logs/build-mac.log"
 ```
 
