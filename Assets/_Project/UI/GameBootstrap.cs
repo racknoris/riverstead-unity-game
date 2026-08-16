@@ -31,6 +31,7 @@ namespace Contraption.UI
         private ContraptionBlueprint _blueprint = null!;
         private Transform _worldRoot = null!;
         private Camera _camera = null!;
+        private Vector3 _cameraHome;
         private float _elapsedSeconds;
 
         private void Awake()
@@ -45,6 +46,7 @@ namespace Contraption.UI
             _flow.PhaseChanged += OnPhaseChanged;
 
             _camera = Camera.main;
+            _cameraHome = _camera.transform.position;
             BuildPlaceholderWorld();
 
             _hud.RunRequested += OnRunRequested;
@@ -85,17 +87,23 @@ namespace Contraption.UI
         /// The camera follows in LateUpdate, after Rigidbody2D interpolation has been applied.
         /// Following in Update reads the raw stepped pose and reintroduces judder
         /// (`docs/ISSUES.md` L3).
+        ///
+        /// With no simulation to follow — between runs, after a reset — it eases back to its
+        /// starting position rather than staying stranded wherever the last run ended. Reset means
+        /// the whole view returns to the start, not just the machine.
         /// </summary>
         private void LateUpdate()
         {
-            if (_simulation == null || !_simulation.TryGetBody(PlaceholderBlueprints.ChassisId, out Rigidbody2D chassis))
+            Vector3 target = _cameraHome;
+            if (_simulation != null
+                && _simulation.TryGetBody(PlaceholderBlueprints.ChassisId, out Rigidbody2D chassis))
             {
-                return;
+                target = new Vector3(chassis.position.x + 3f, chassis.position.y + 1.5f, _cameraHome.z);
             }
 
             Vector3 position = _camera.transform.position;
-            position.x = Mathf.Lerp(position.x, chassis.position.x + 3f, Time.deltaTime * 3f);
-            position.y = Mathf.Lerp(position.y, chassis.position.y + 1.5f, Time.deltaTime * 2f);
+            position.x = Mathf.Lerp(position.x, target.x, Time.deltaTime * 3f);
+            position.y = Mathf.Lerp(position.y, target.y, Time.deltaTime * 2f);
             _camera.transform.position = position;
         }
 
