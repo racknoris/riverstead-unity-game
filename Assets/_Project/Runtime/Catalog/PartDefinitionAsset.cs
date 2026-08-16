@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Contraption.Domain.Blueprints;
 using UnityEngine;
@@ -24,8 +25,8 @@ namespace Contraption.Runtime.Catalog
         [SerializeField] private PartType _partType = PartType.Beam;
         [SerializeField] private string _displayName = string.Empty;
 
-        [Tooltip("Ids of the holes this part offers for others to attach to.")]
-        [SerializeField] private string[] _attachmentHoleIds = new string[0];
+        [Tooltip("The holes this part offers for others to attach to, with their local offsets.")]
+        [SerializeField] private HoleLayout[] _attachmentHoles = new HoleLayout[0];
 
         [Header("Domain (validation and scoring)")]
         [SerializeField] private float _mass = 1f;
@@ -95,18 +96,32 @@ namespace Contraption.Runtime.Catalog
                 return null;
             }
 
-            var holes = new List<HoleId>(_attachmentHoleIds.Length);
-            foreach (string holeId in _attachmentHoleIds)
+            var holes = new List<AttachmentHole>(_attachmentHoles.Length);
+            foreach (HoleLayout hole in _attachmentHoles)
             {
-                if (string.IsNullOrWhiteSpace(holeId))
+                if (string.IsNullOrWhiteSpace(hole.Id))
                 {
                     return null;
                 }
 
-                holes.Add(new HoleId(holeId));
+                holes.Add(new AttachmentHole(
+                    new HoleId(hole.Id),
+                    new EditorPosition(hole.LocalPosition.x, hole.LocalPosition.y)));
             }
 
             return new PartDefinition(_partType, _displayName, _mass, _cost, holes);
+        }
+        /// <summary>
+        /// Inspector shape for one hole. A nested serializable struct rather than parallel arrays,
+        /// so an id can never drift out of step with its position.
+        /// </summary>
+        [Serializable]
+        private struct HoleLayout
+        {
+            public string Id;
+
+            [Tooltip("Offset from the part's origin, in the part's unrotated local space.")]
+            public Vector2 LocalPosition;
         }
     }
 }

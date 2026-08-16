@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partType: 7
   _displayName: Protective Plate
-  _attachmentHoleIds:
-  - mount
+  _attachmentHoles:
+  - Id: mount
+    LocalPosition: {x: 0, y: -0.1}
   _mass: 0.5
   _cost: 1
   _prefab: {fileID: 0}

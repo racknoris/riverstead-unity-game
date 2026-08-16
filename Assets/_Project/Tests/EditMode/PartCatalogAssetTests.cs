@@ -82,6 +82,51 @@ namespace Contraption.Tests.EditMode
         }
 
         [Test]
+        public void Catalog_EveryHole_HasAUniqueIdWithinItsPart()
+        {
+            foreach (PartDefinitionAsset asset in _catalog.Definitions)
+            {
+                PartDefinition definition = asset.ToDomainDefinition();
+                var seen = new HashSet<string>();
+
+                foreach (AttachmentHole hole in definition.AttachmentHoles)
+                {
+                    Assert.That(
+                        seen.Add(hole.Id.Value),
+                        Is.True,
+                        $"{asset.name} defines hole '{hole.Id}' twice, so attaching to it is ambiguous.");
+                }
+            }
+        }
+
+        [Test]
+        public void Catalog_MultiHoleParts_PlaceTheirHolesApart()
+        {
+            // Holes stacked on top of each other would make a hinge pivot about the same point as
+            // its own mount, which silently behaves like a weld.
+            foreach (PartDefinitionAsset asset in _catalog.Definitions)
+            {
+                PartDefinition definition = asset.ToDomainDefinition();
+                IReadOnlyList<AttachmentHole> holes = definition.AttachmentHoles;
+                if (holes.Count < 2)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < holes.Count; i++)
+                {
+                    for (int j = i + 1; j < holes.Count; j++)
+                    {
+                        Assert.That(
+                            holes[i].LocalPosition,
+                            Is.Not.EqualTo(holes[j].LocalPosition),
+                            $"{asset.name} puts '{holes[i].Id}' and '{holes[j].Id}' in the same place.");
+                    }
+                }
+            }
+        }
+
+        [Test]
         public void Catalog_PoweredWheel_IsTheOnlyPartWithAMotor()
         {
             foreach (PartDefinitionAsset asset in _catalog.Definitions)

@@ -117,6 +117,36 @@ namespace Contraption.Tests.PlayMode
         }
 
         [Test]
+        public void Build_AJoint_AnchorsAtTheNamedHoleNotThePartOrigin()
+        {
+            // The bug this guards: anchoring at the attached part's own position instead of at
+            // the hole. Welds are indifferent to it, so it stayed invisible until a hinge was
+            // attached and pivoted about the wrong point.
+            _root = _builder.Build(Level(), Rover());
+            _root.TryGetBody(new PartId("wheel-rear"), out Rigidbody2D wheel);
+
+            var hinge = wheel.GetComponent<HingeJoint2D>();
+
+            // hole-01 sits at (-1.15, -0.15) in chassis-local space.
+            Assert.That(hinge.connectedAnchor.x, Is.EqualTo(-1.15f).Within(0.001f));
+            Assert.That(hinge.connectedAnchor.y, Is.EqualTo(-0.15f).Within(0.001f));
+            Assert.That(hinge.autoConfigureConnectedAnchor, Is.False);
+        }
+
+        [Test]
+        public void Build_TwoPartsOnDifferentHoles_AnchorAtDifferentPoints()
+        {
+            _root = _builder.Build(Level(), Rover());
+            _root.TryGetBody(new PartId("wheel-rear"), out Rigidbody2D rear);
+            _root.TryGetBody(new PartId("wheel-front"), out Rigidbody2D front);
+
+            Vector2 rearAnchor = rear.GetComponent<HingeJoint2D>().connectedAnchor;
+            Vector2 frontAnchor = front.GetComponent<HingeJoint2D>().connectedAnchor;
+
+            Assert.That(rearAnchor, Is.Not.EqualTo(frontAnchor), "Distinct holes must anchor distinctly.");
+        }
+
+        [Test]
         public void Build_EveryBody_Interpolates()
         {
             _root = _builder.Build(Level(), Rover());

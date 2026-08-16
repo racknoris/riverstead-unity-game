@@ -14,17 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partType: 0
   _displayName: Chassis
-  _attachmentHoleIds:
-  - hole-01
-  - hole-02
-  - hole-03
-  - hole-04
-  - hole-05
-  - hole-06
-  - hole-07
-  - hole-08
-  - hole-09
-  - hole-10
+  _attachmentHoles:
+  - Id: hole-01
+    LocalPosition: {x: -1.15, y: -0.15}
+  - Id: hole-02
+    LocalPosition: {x: 1.15, y: -0.15}
+  - Id: hole-03
+    LocalPosition: {x: -0.55, y: -0.15}
+  - Id: hole-04
+    LocalPosition: {x: 0.55, y: -0.15}
+  - Id: hole-05
+    LocalPosition: {x: -1.15, y: 0.15}
+  - Id: hole-06
+    LocalPosition: {x: 1.15, y: 0.15}
+  - Id: hole-07
+    LocalPosition: {x: -0.55, y: 0.15}
+  - Id: hole-08
+    LocalPosition: {x: 0.55, y: 0.15}
+  - Id: hole-09
+    LocalPosition: {x: -1.4, y: 0}
+  - Id: hole-10
+    LocalPosition: {x: 1.4, y: 0}
   _mass: 2.2
   _cost: 0
   _prefab: {fileID: 0}

@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partType: 4
   _displayName: Rigid Connector
-  _attachmentHoleIds:
-  - end-a
-  - end-b
+  _attachmentHoles:
+  - Id: end-a
+    LocalPosition: {x: -0.1, y: 0}
+  - Id: end-b
+    LocalPosition: {x: 0.1, y: 0}
   _mass: 0.1
   _cost: 1
   _prefab: {fileID: 0}

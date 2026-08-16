@@ -28,7 +28,11 @@ namespace Contraption.Runtime.Simulation
         /// Creates the joint on the attached body, connected back to the anchor body.
         /// Returns null if either part is missing or the type has no catalog entry.
         /// </summary>
-        public Joint2D Build(Rigidbody2D attachedBody, PartType attachedType, Rigidbody2D anchorBody)
+        public Joint2D Build(
+            Rigidbody2D attachedBody,
+            PartType attachedType,
+            Rigidbody2D anchorBody,
+            Vector2 anchorHoleLocalPosition)
         {
             if (attachedBody == null || anchorBody == null)
             {
@@ -43,15 +47,15 @@ namespace Contraption.Runtime.Simulation
             switch (attachedType)
             {
                 case PartType.PoweredWheel:
-                    return BuildPoweredHinge(attachedBody, anchorBody, definition);
+                    return BuildPoweredHinge(attachedBody, anchorBody, anchorHoleLocalPosition, definition);
                 case PartType.Wheel:
-                    return BuildFreeHinge(attachedBody, anchorBody);
+                    return BuildFreeHinge(attachedBody, anchorBody, anchorHoleLocalPosition);
                 case PartType.Hinge:
-                    return BuildLimitedHinge(attachedBody, anchorBody, definition);
+                    return BuildLimitedHinge(attachedBody, anchorBody, anchorHoleLocalPosition, definition);
                 case PartType.Spring:
-                    return BuildSpring(attachedBody, anchorBody, definition);
+                    return BuildSpring(attachedBody, anchorBody, anchorHoleLocalPosition, definition);
                 default:
-                    return BuildWeld(attachedBody, anchorBody);
+                    return BuildWeld(attachedBody, anchorBody, anchorHoleLocalPosition);
             }
         }
 
@@ -61,27 +65,30 @@ namespace Contraption.Runtime.Simulation
         /// stiffer, and non-monotonically so (`docs/ISSUES.md` L1). Weld stiffness comes from the
         /// project's solver iteration count, not from this joint.
         /// </summary>
-        private static FixedJoint2D BuildWeld(Rigidbody2D attachedBody, Rigidbody2D anchorBody)
+        private static FixedJoint2D BuildWeld(
+            Rigidbody2D attachedBody, Rigidbody2D anchorBody, Vector2 anchorHole)
         {
             FixedJoint2D weld = attachedBody.gameObject.AddComponent<FixedJoint2D>();
-            Connect(weld, attachedBody, anchorBody);
+            Connect(weld, anchorBody, anchorHole);
             return weld;
         }
 
-        private static HingeJoint2D BuildFreeHinge(Rigidbody2D attachedBody, Rigidbody2D anchorBody)
+        private static HingeJoint2D BuildFreeHinge(
+            Rigidbody2D attachedBody, Rigidbody2D anchorBody, Vector2 anchorHole)
         {
             HingeJoint2D hinge = attachedBody.gameObject.AddComponent<HingeJoint2D>();
-            Connect(hinge, attachedBody, anchorBody);
+            Connect(hinge, anchorBody, anchorHole);
             return hinge;
         }
 
         private static HingeJoint2D BuildLimitedHinge(
             Rigidbody2D attachedBody,
             Rigidbody2D anchorBody,
+            Vector2 anchorHole,
             PartDefinitionAsset definition)
         {
             HingeJoint2D hinge = attachedBody.gameObject.AddComponent<HingeJoint2D>();
-            Connect(hinge, attachedBody, anchorBody);
+            Connect(hinge, anchorBody, anchorHole);
             hinge.useLimits = true;
             hinge.limits = new JointAngleLimits2D
             {
@@ -94,10 +101,11 @@ namespace Contraption.Runtime.Simulation
         private static HingeJoint2D BuildPoweredHinge(
             Rigidbody2D attachedBody,
             Rigidbody2D anchorBody,
+            Vector2 anchorHole,
             PartDefinitionAsset definition)
         {
             HingeJoint2D hinge = attachedBody.gameObject.AddComponent<HingeJoint2D>();
-            Connect(hinge, attachedBody, anchorBody);
+            Connect(hinge, anchorBody, anchorHole);
             hinge.useMotor = true;
             // A POSITIVE motorSpeed drives +X. The intuitive reading is backwards, and getting it
             // wrong produces a perfectly healthy machine driving the wrong way (docs/ISSUES.md L2).
@@ -116,6 +124,7 @@ namespace Contraption.Runtime.Simulation
         private static SpringJoint2D BuildSpring(
             Rigidbody2D attachedBody,
             Rigidbody2D anchorBody,
+            Vector2 anchorHole,
             PartDefinitionAsset definition)
         {
             SpringJoint2D spring = attachedBody.gameObject.AddComponent<SpringJoint2D>();
@@ -123,28 +132,28 @@ namespace Contraption.Runtime.Simulation
             spring.autoConfigureConnectedAnchor = false;
             spring.autoConfigureDistance = false;
             spring.anchor = Vector2.zero;
-            spring.connectedAnchor = anchorBody.transform.InverseTransformPoint(attachedBody.transform.position);
-            spring.distance = Vector2.Distance(attachedBody.transform.position, anchorBody.transform.position);
+            spring.connectedAnchor = anchorHole;
+            spring.distance = Vector2.Distance(
+                attachedBody.transform.position, anchorBody.transform.TransformPoint(anchorHole));
             spring.frequency = definition.SpringFrequency;
             spring.dampingRatio = definition.SpringDampingRatio;
             return spring;
         }
 
         /// <summary>
-        /// Anchors the joint at the attached part's own origin, pinned to the corresponding point
-        /// on the anchor body.
+        /// Pins the attached part's origin to the *hole* on the anchor part.
         ///
-        /// Note this uses the parts' *placed positions*, not hole geometry: the catalog records
-        /// hole ids but not where those holes sit on a part. That is enough to build a correct
-        /// machine from a blueprint, and hole positions become necessary in Milestone 6 when the
-        /// player places parts onto specific holes. Recorded in `docs/TASKS.md`.
+        /// Anchoring at the hole rather than at wherever the attached part happens to sit is what
+        /// makes a hinge pivot correctly. Welds are indifferent — they are rigid either way —
+        /// which is precisely why an origin-anchored implementation passed every test until a
+        /// hinge was actually attached to something.
         /// </summary>
-        private static void Connect(AnchoredJoint2D joint, Rigidbody2D attachedBody, Rigidbody2D anchorBody)
+        private static void Connect(AnchoredJoint2D joint, Rigidbody2D anchorBody, Vector2 anchorHoleLocalPosition)
         {
             joint.connectedBody = anchorBody;
             joint.autoConfigureConnectedAnchor = false;
             joint.anchor = Vector2.zero;
-            joint.connectedAnchor = anchorBody.transform.InverseTransformPoint(attachedBody.transform.position);
+            joint.connectedAnchor = anchorHoleLocalPosition;
         }
     }
 }

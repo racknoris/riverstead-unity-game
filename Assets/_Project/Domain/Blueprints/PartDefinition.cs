@@ -14,14 +14,14 @@ namespace Contraption.Domain.Blueprints
     /// </summary>
     public sealed record PartDefinition
     {
-        private readonly HoleId[] _attachmentHoles;
+        private readonly AttachmentHole[] _attachmentHoles;
 
         public PartDefinition(
             PartType type,
             string displayName,
             float mass,
             int cost,
-            IReadOnlyList<HoleId>? attachmentHoles = null)
+            IReadOnlyList<AttachmentHole>? attachmentHoles = null)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -38,7 +38,7 @@ namespace Contraption.Domain.Blueprints
             Mass = mass;
             Cost = cost;
             _attachmentHoles = attachmentHoles is null
-                ? Array.Empty<HoleId>()
+                ? Array.Empty<AttachmentHole>()
                 : CopyOf(attachmentHoles);
         }
 
@@ -51,8 +51,25 @@ namespace Contraption.Domain.Blueprints
         /// <summary>Budget cost, for the "use fewer parts" scoring input (`ARCHITECTURE.md` §2).</summary>
         public int Cost { get; }
 
-        /// <summary>The holes this part offers for others to attach to.</summary>
-        public IReadOnlyList<HoleId> AttachmentHoles => _attachmentHoles;
+        /// <summary>The holes this part offers for others to attach to, with their local positions.</summary>
+        public IReadOnlyList<AttachmentHole> AttachmentHoles => _attachmentHoles;
+
+        /// <summary>Finds a hole by id. Returns false rather than throwing, so callers can
+        /// report an unknown hole in their own terms.</summary>
+        public bool TryGetHole(HoleId holeId, out AttachmentHole hole)
+        {
+            for (int i = 0; i < _attachmentHoles.Length; i++)
+            {
+                if (_attachmentHoles[i].Id == holeId)
+                {
+                    hole = _attachmentHoles[i];
+                    return true;
+                }
+            }
+
+            hole = null!;
+            return false;
+        }
 
         public bool Equals(PartDefinition? other)
         {
@@ -79,12 +96,13 @@ namespace Contraption.Domain.Blueprints
                 Type, DisplayName, Mass, Cost, ValueEquality.SequenceHashCode(_attachmentHoles));
         }
 
-        private static HoleId[] CopyOf(IReadOnlyList<HoleId> source)
+        private static AttachmentHole[] CopyOf(IReadOnlyList<AttachmentHole> source)
         {
-            var copy = new HoleId[source.Count];
+            var copy = new AttachmentHole[source.Count];
             for (int i = 0; i < source.Count; i++)
             {
-                copy[i] = source[i];
+                copy[i] = source[i] ?? throw new ArgumentException(
+                    "A part definition cannot contain a null hole.", nameof(source));
             }
 
             return copy;

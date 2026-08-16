@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partType: 6
   _displayName: Spring
-  _attachmentHoleIds:
-  - end-a
-  - end-b
+  _attachmentHoles:
+  - Id: end-a
+    LocalPosition: {x: 0, y: -0.25}
+  - Id: end-b
+    LocalPosition: {x: 0, y: 0.25}
   _mass: 0.2
   _cost: 1
   _prefab: {fileID: 0}

@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _partType: 2
   _displayName: Powered Wheel
-  _attachmentHoleIds:
-  - axle
+  _attachmentHoles:
+  - Id: axle
+    LocalPosition: {x: 0, y: 0}
   _mass: 0.6
   _cost: 2
   _prefab: {fileID: 0}

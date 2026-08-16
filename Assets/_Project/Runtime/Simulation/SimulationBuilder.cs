@@ -17,18 +17,15 @@ namespace Contraption.Runtime.Simulation
     /// </summary>
     public sealed class SimulationBuilder
     {
+        private readonly PartCatalog _catalog;
         private readonly BodyBuilder _bodyBuilder;
         private readonly JointBuilder _jointBuilder;
 
         public SimulationBuilder(PartCatalog catalog)
-            : this(new BodyBuilder(catalog, new PartViewFactory()), new JointBuilder(catalog))
         {
-        }
-
-        public SimulationBuilder(BodyBuilder bodyBuilder, JointBuilder jointBuilder)
-        {
-            _bodyBuilder = bodyBuilder;
-            _jointBuilder = jointBuilder;
+            _catalog = catalog;
+            _bodyBuilder = new BodyBuilder(catalog, new PartViewFactory());
+            _jointBuilder = new JointBuilder(catalog);
         }
 
         /// <summary>
@@ -78,11 +75,38 @@ namespace Contraption.Runtime.Simulation
                 // The attached part decides the joint: attaching a hinge makes a hinge, attaching
                 // a powered wheel makes a motorised one.
                 PartType attachedType = TypeOf(blueprint, attachment.ToPartId);
-                if (_jointBuilder.Build(attachedBody, attachedType, anchorBody) != null)
+                PartType anchorType = TypeOf(blueprint, attachment.FromPartId);
+                Vector2 anchorHole = HolePosition(anchorType, attachment.FromHoleId);
+
+                if (_jointBuilder.Build(attachedBody, attachedType, anchorBody, anchorHole) != null)
                 {
                     root.CountJoint();
                 }
             }
+        }
+
+        /// <summary>
+        /// Where the anchor part's hole sits, in that part's local space. Falls back to its origin
+        /// if the hole is unknown, and says so — a blueprint naming a hole the catalog does not
+        /// have is a real defect, but it should not stop the rest of the machine from building.
+        /// </summary>
+        private Vector2 HolePosition(PartType anchorType, HoleId holeId)
+        {
+            if (!_catalog.TryGetDefinition(anchorType, out PartDefinitionAsset definition))
+            {
+                return Vector2.zero;
+            }
+
+            PartDefinition domainDefinition = definition.ToDomainDefinition();
+            if (domainDefinition == null || !domainDefinition.TryGetHole(holeId, out AttachmentHole hole))
+            {
+                Debug.LogError(
+                    $"'{anchorType}' has no hole '{holeId}'. Anchoring at the part's origin instead, "
+                    + "which will place the joint in the wrong spot.");
+                return Vector2.zero;
+            }
+
+            return new Vector2(hole.LocalPosition.X, hole.LocalPosition.Y);
         }
 
         private static PartType TypeOf(ContraptionBlueprint blueprint, PartId partId)
