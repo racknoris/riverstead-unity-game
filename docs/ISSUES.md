@@ -65,13 +65,19 @@ Other recorded results at 16/8:
 
 ## Measured device performance (Milestone 1)
 
-Android, development build with Autoconnect Profiler, spike scene. Device: *(TODO: model)*.
-Development builds carry profiler instrumentation, so these are pessimistic bounds, not the
-ceiling — do not read a later release-build improvement as a regression fix.
+Android, development build with Autoconnect Profiler, spike scene.
+Device: **Samsung Galaxy S24 (SM-S921B/DS)**.
+
+Two things to hold in mind when reading these. Development builds carry profiler
+instrumentation, so the figures are pessimistic bounds rather than the ceiling — do not read a
+later release-build improvement as a regression fix. And the S24 is a 2024 flagship, so this is
+close to a **best case** for Android; a mid-range or older device is the number that would
+actually gate the POC, and has not been measured.
 
 | Measure | Result |
 | --- | --- |
-| `PlayerLoop` frame time | ~16 ms — i.e. **at the 60 fps cap**, not near a limit. `SpikeBootstrap` sets `targetFrameRate = 60`, so most of that is idle. Real headroom shows up as `WaitForTargetFPS` / `Gfx.WaitForPresent`. |
+| `PlayerLoop` frame time | ~16 ms — i.e. **at the 60 fps cap**, not near a limit. `SpikeBootstrap` sets `targetFrameRate = 60`, so most of that is idle. |
+| `WaitForTargetFPS` (idle) | **11 ms typical, 14 ms peak** — so actual work is only ~2–5 ms of the 16.67 ms budget, roughly **3× headroom**. This is the figure that makes the frame time meaningful; the ~16 ms above says nothing on its own. |
 | `FixedUpdate.Physics2DFixedUpdate` | **0.16 ms** typical, **0.19 ms** peak during the gap landing (peak contacts and bodies in motion) |
 | Frame spikes | None observed |
 | `GC.Alloc` | 0–0.02 ms per frame |
@@ -82,10 +88,14 @@ mobile cost was unverified — is comfortably affordable, with room for 32/16 if
 ever needs stiffer welds. The `docs/CONVENTIONS.md` caveat about unverified mobile cost is
 retired for the POC's scale.
 
-Two limits on how far this generalises. The spike scene is small (roughly a dozen static
+Three limits on how far this generalises. The spike scene is small (roughly a dozen static
 bodies and eight dynamic ones); Milestone 8 adds projectiles and Milestone 6 allows ~12 player
 parts, so this is not a measurement of the finished game — but 0.16 ms leaves a lot of room to
-grow into. And no-spikes here also confirms the L3 interpolation fix holds on device.
+grow into. It is a flagship device. And it is a development build. Milestone 10 should re-measure
+on the weakest device anyone is expected to play on, which is the one that decides whether the
+POC ships, not this one.
+
+The absence of spikes independently confirms the L3 interpolation fix holds on device.
 
 ## Risks carried over from the previous project
 
