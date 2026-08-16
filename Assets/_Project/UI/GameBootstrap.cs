@@ -31,7 +31,7 @@ namespace Contraption.UI
         private ContraptionBlueprint _blueprint = null!;
         private Transform _worldRoot = null!;
         private Camera _camera = null!;
-        private float _runStartTime;
+        private float _elapsedSeconds;
 
         private void Awake()
         {
@@ -62,13 +62,21 @@ namespace Contraption.UI
             }
 
             _flow.PhaseChanged -= OnPhaseChanged;
-            // Leaving timeScale at 0 would freeze whatever loads next.
-            Time.timeScale = 1f;
+            // Leaving physics in Script mode would freeze whatever loads next, since nothing
+            // else calls Physics2D.Simulate.
+            Physics2D.simulationMode = SimulationMode2D.FixedUpdate;
         }
 
         // Input and UI in Update; physics reads stay in FixedUpdate (`docs/CONVENTIONS.md`).
         private void Update()
         {
+            // Run time is accumulated explicitly rather than read from Time.time, because pausing
+            // no longer stops the clock - see the note on OnPhaseChanged.
+            if (_flow.Phase == GamePhase.Running)
+            {
+                _elapsedSeconds += Time.deltaTime;
+            }
+
             EvaluateRun();
             _hud.Show(_flow, ElapsedSeconds, _timeLimitSeconds);
         }
@@ -86,17 +94,16 @@ namespace Contraption.UI
             }
 
             Vector3 position = _camera.transform.position;
-            position.x = Mathf.Lerp(position.x, chassis.position.x + 3f, Time.unscaledDeltaTime * 3f);
-            position.y = Mathf.Lerp(position.y, chassis.position.y + 1.5f, Time.unscaledDeltaTime * 2f);
+            position.x = Mathf.Lerp(position.x, chassis.position.x + 3f, Time.deltaTime * 3f);
+            position.y = Mathf.Lerp(position.y, chassis.position.y + 1.5f, Time.deltaTime * 2f);
             _camera.transform.position = position;
         }
 
-        private float ElapsedSeconds =>
-            _flow.Phase == GamePhase.Editing ? 0f : Time.time - _runStartTime;
+        private float ElapsedSeconds => _elapsedSeconds;
 
         private void OnRunRequested()
         {
-            _runStartTime = Time.time;
+            _elapsedSeconds = 0f;
             _flow.StartRun();
         }
 
@@ -139,24 +146,45 @@ namespace Contraption.UI
                         RebuildSimulation();
                     }
 
-                    Time.timeScale = 1f;
+                    SetPhysicsRunning(true);
                     break;
 
                 case GamePhase.Paused:
-                    Time.timeScale = 0f;
+                    SetPhysicsRunning(false);
                     break;
 
                 case GamePhase.Editing:
-                    Time.timeScale = 1f;
+                    SetPhysicsRunning(true);
                     DestroySimulation();
                     break;
 
                 case GamePhase.Completed:
                 case GamePhase.Failed:
-                    // The machine is left standing so the player can see how it ended.
-                    Time.timeScale = 1f;
+                    // The machine is left standing, and frozen, so the player can read how it
+                    // ended rather than watching it roll on past the finish.
+                    SetPhysicsRunning(false);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Freezes or resumes the simulation by switching whether Unity steps Physics 2D at all.
+        ///
+        /// Deliberately *not* <c>Time.timeScale = 0</c>. That is a global hammer: it stops
+        /// animation, effects and every <c>Time.deltaTime</c> in the project, so anything that
+        /// should stay alive during a pause has to be rewritten against unscaled time. Freezing
+        /// physics alone leaves the rest of the game running normally, which is what a pause
+        /// actually means here.
+        ///
+        /// In <c>Script</c> mode Unity steps physics only when asked, and nothing asks, so the
+        /// simulation holds still. The cost is that the run clock no longer stops by itself —
+        /// hence the explicit accumulation in Update.
+        /// </summary>
+        private static void SetPhysicsRunning(bool running)
+        {
+            Physics2D.simulationMode = running
+                ? SimulationMode2D.FixedUpdate
+                : SimulationMode2D.Script;
         }
 
         /// <summary>Reset is destroy-and-rebuild, never a rewind (`ARCHITECTURE.md` §8).</summary>

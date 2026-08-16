@@ -16,6 +16,30 @@ Record material architectural deviations here **before** implementing them: deci
 > than edited. Current values live in `docs/CONVENTIONS.md`, which is the thing that must never
 > hold a stale second copy.
 
+### D9 — Pause freezes Physics 2D rather than scaling time to zero (2026-08-16)
+
+**Decision.** Pausing sets `Physics2D.simulationMode` to `Script` and simply never calls
+`Simulate`; resuming sets it back to `FixedUpdate`. `Time.timeScale` is not touched anywhere.
+
+**Why.** `timeScale = 0` is a global hammer — it stops animation, effects and every
+`Time.deltaTime` in the project, so anything that should stay alive during a pause has to be
+rewritten against unscaled time. That seam had already appeared: the camera follow needed
+`unscaledDeltaTime` purely to stay responsive while paused. Freezing physics alone leaves the
+rest of the game running normally, which is what a pause means here. It also leaves the door
+open to the deterministic stepping §11 would need for replay, without committing to it now.
+
+**Cost, and the trap it sets.** `timeScale = 0` was also freezing `Time.time`, which is what
+kept the run clock from advancing while paused. Without it a paused run would keep counting and
+eventually time out on a machine standing still. Elapsed time is therefore accumulated
+explicitly in `Update` while Running, rather than derived from `Time.time`.
+
+**Scope.** `GameBootstrap.OnPhaseChanged` and its run clock. No domain change — `GameFlow`
+neither knows nor cares how the view layer freezes the world.
+
+**Status.** Done. Verified headlessly: across three real seconds of pause, wall clock advanced
+while elapsed time held at 3.0 and the chassis held at x = 7.47. Completion time was unchanged
+at 15.6 s versus 15.7 s before.
+
 ### D8 — Milestone 5 gets throwaway placeholder world content (2026-08-16)
 
 **Decision.** The Milestone 5 bootstrap creates flat ground, a distance-based finish line, and a
@@ -432,10 +456,8 @@ assigned, so real art is a drop-in rather than a code change.
 - **Illegal transitions throw rather than being ignored.** Pausing a run that is not running is a
   caller bug, and swallowing it hides the bug. `GameFlow` also refuses a `Completed` phase holding
   a `Failed` result, which would otherwise be a genuinely confusing state to debug.
-- **Pause is `Time.timeScale = 0`.** Simple, and elapsed time freezes with it, which the headless
-  run confirmed. The more surgical alternative — switching `Physics2D.simulationMode` and not
-  stepping — is what a deterministic replay would need, but that is out of scope (§11 explicitly
-  defers replay).
+- **Pause freezes Physics 2D, and does not touch `Time.timeScale`** — see D9. The run clock is
+  accumulated explicitly, because nothing stops `Time.time` any more.
 - **The HUD is built in code, not UXML.** For three buttons a second file to keep in sync buys
   nothing. Milestone 6's editor panels are where UXML starts earning its place.
 - **Buttons are disabled, not hidden, between phases**, so the control set does not move around
