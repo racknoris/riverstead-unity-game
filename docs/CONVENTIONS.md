@@ -9,6 +9,17 @@ Style and project conventions, aligned with Unity's published C# style guide and
 - `var` only when the type is obvious from the right-hand side.
 - Braces on all control blocks, including single-line `if`.
 - Prefer `readonly`, records, and immutable collections in the Domain assembly. No public mutable fields in domain types.
+- **Unity 6.5 compiles at C# 9.** Record *classes* work; `record struct` (C# 10) and init-only
+  setters do not — `System.Runtime.CompilerServices.IsExternalInit` is absent. Value types are
+  therefore hand-written `readonly struct`s implementing `IEquatable<T>` with `==`/`!=`. Do not
+  try to raise the language version with a `csc.rsp` switch; Unity's toolchain owns it.
+- **Records do not give value equality over collection members.** The synthesised `Equals`
+  compares a list field by reference, so two blueprints holding equal-but-distinct lists compare
+  unequal — which silently breaks every round-trip test. Aggregates holding collections
+  (`ContraptionBlueprint`, `PartConfiguration`, `PartDefinition`) implement `Equals`/`GetHashCode`
+  by hand via `ValueEquality`.
+- **A record's synthesised copy constructor participates in overload resolution.** `new T(null)`
+  is ambiguous when `T` also has a single-reference-parameter constructor; cast the argument.
 - Events: `System.Action`/`event` with past-tense names for facts (`PartPlaced`), imperative names for requests (`PlacePart`).
 - No magic numbers in gameplay code — tuning values live in `PartDefinitionAsset` or a named constant with a comment saying why.
 - Nullable reference types enabled in the Domain assembly.
@@ -58,6 +69,9 @@ Style and project conventions, aligned with Unity's published C# style guide and
 - Edit-mode tests for everything in Domain (models, validation, serialization, scoring). These are the cheap, fast majority.
 - Play-mode tests only where physics or lifecycle is the subject (joint verification, simulation rebuild leak test).
 - Test names: `Method_Condition_Expectation`.
+- NUnit's `Has.Count` reflects on the *runtime* type. A member typed `IReadOnlyList<T>` but backed
+  by an array exposes `Length`, not `Count`, and the constraint throws rather than failing
+  cleanly. Assert on `.Count` directly.
 - A regression test is only trusted after it has been observed to fail against the defect it guards.
 
 ## Physics settings (record, don't scatter)

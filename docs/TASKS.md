@@ -140,13 +140,33 @@ restarts, `Tab` cycles variants; on a device, use the two on-screen buttons.
 
 ## Milestone 2: Immutable Blueprint Models
 
-- [ ] Domain models from `docs/ARCHITECTURE.md` §7 with value equality and stable IDs.
-- [ ] JSON serialization with schema version; round-trip tests (serialize → deserialize → equal).
-- [ ] A malformed/old-version payload fails loudly with a typed error, not silently.
+- [x] Domain models from `docs/ARCHITECTURE.md` §7 with value equality and stable IDs. All eight, plus `EditorPosition` — a domain stand-in for `Vector2`, since the domain cannot reference UnityEngine.
+- [x] JSON serialization with schema version; round-trip tests (serialize → deserialize → equal).
+- [x] A malformed/old-version payload fails loudly with a typed error, not silently. `BlueprintSerializationException` carries a `BlueprintSerializationError` distinguishing malformed JSON, missing version, unsupported version, and invalid content; each has a test.
 
 ### Done when
 
-- Round-trip and versioning tests pass; no UnityEngine types anywhere in Domain.
+- [x] Round-trip and versioning tests pass; no UnityEngine types anywhere in Domain. **29 tests green.**
+
+### Notes
+
+- **Typed ids.** `PartId`, `HoleId` and `AttachmentId` are distinct types rather than strings,
+  because attachments pair a part id with a hole id and those are precisely the two things an
+  editor transposes. JSON converters keep them as bare strings in the saved format.
+- **Value equality is hand-written where collections are involved.** Records compare list members
+  by reference, so a deserialised blueprint would never equal its original. See
+  `docs/CONVENTIONS.md`.
+- **The defensive-copy test was observed failing** before being trusted: removing the copy in
+  `ContraptionBlueprint` made it fail, then it was restored.
+- **Schema version is checked before binding**, so an old file reports "version 0, expected 1"
+  rather than a confusing property-level error. Migration is deliberately not attempted — the POC
+  has no saved data worth migrating, and a real migration path is a Milestone 9 concern at the
+  earliest.
+- **`RunResult` carries scoring inputs but computes no score.** How health, time and part count
+  combine will change repeatedly; baking a formula into the result object makes past results
+  unreadable when it does.
+- **Unity 6.5 is C# 9**, which cost a compile cycle: `record struct` is C# 10. Recorded in
+  `docs/CONVENTIONS.md` so it is not rediscovered in Milestone 5.
 
 ## Milestone 3: Part Catalog
 
