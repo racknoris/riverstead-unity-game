@@ -54,3 +54,6 @@ sysinfo.txt
 
 # Local build output
 /test*.app/
+
+# Unity build scratch (Android/IL2CPP intermediates)
+/.utmp/
