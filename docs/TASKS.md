@@ -458,6 +458,16 @@ assigned, so real art is a drop-in rather than a code change.
   a `Failed` result, which would otherwise be a genuinely confusing state to debug.
 - **Pause freezes Physics 2D, and does not touch `Time.timeScale`** — see D9. The run clock is
   accumulated explicitly, because nothing stops `Time.time` any more.
+- **The Editing phase deliberately shows nothing.** No machine is visible until Run is pressed.
+  This is a known, accepted gap rather than a bug: the simulation cannot simply be left standing
+  during Editing, because those are dynamic bodies with motors and they would settle and drive
+  away. Editing needs a *static preview* of the blueprint, which is a different object from a
+  running simulation, and Milestone 6 needs it regardless — so it is built once, there, instead
+  of a throwaway interim here.
+- **Reset returns the camera home as well as rebuilding the machine.** Worth remembering as
+  Milestone 6 adds more view state (selection, active tool, palette): each one needs an answer to
+  "does reset clear this?" `ARCHITECTURE.md` §12 answers it for `selectedPartId` on *startup*,
+  which is a different question.
 - **The HUD is built in code, not UXML.** For three buttons a second file to keep in sync buys
   nothing. Milestone 6's editor panels are where UXML starts earning its place.
 - **Buttons are disabled, not hidden, between phases**, so the control set does not move around
@@ -486,6 +496,7 @@ the solver**, and get a position trace before forming a theory.
 
 ## Milestone 6: Touch Editor
 
+- [ ] **`BlueprintPreview`: render the blueprint statically while editing** — parts drawn from the catalog with no rigidbodies or joints, re-rendered after every edit. Deferred here deliberately from Milestone 5, which shows nothing until Run; a running simulation cannot stand in for it, since motorised dynamic bodies drive themselves away.
 - [ ] Hole-based placement: tap a hole, pick a part from a palette.
 - [ ] Rotate in fixed increments; remove; connect/disconnect supported parts.
 - [ ] Editor edits go through `ContraptionEditor` only; every edit yields a new blueprint.
