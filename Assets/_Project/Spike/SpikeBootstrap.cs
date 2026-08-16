@@ -95,6 +95,15 @@ namespace Contraption.Spike
         {
             ReadKeyboardShortcuts();
             EvaluateRun();
+        }
+
+        /// <summary>
+        /// The camera follows in LateUpdate, not Update, because Rigidbody2D interpolation is
+        /// applied to transforms after Update runs. Following in Update would read the raw
+        /// stepped pose and reintroduce exactly the judder the interpolation removes.
+        /// </summary>
+        private void LateUpdate()
+        {
             FollowWithCamera();
         }
 

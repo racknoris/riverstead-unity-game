@@ -18,6 +18,15 @@ Style and project conventions, aligned with Unity's published C# style guide and
 - No `GameObject.Find`, `FindObjectOfType`, or string-based lookups in gameplay code; wire references in the Inspector or through builders.
 - No `GetComponent`, allocation, LINQ, or string concatenation inside `Update`/`FixedUpdate` hot paths; cache in `Awake`.
 - Physics reads/writes only in `FixedUpdate`; input reads in `Update`.
+- **Every dynamic `Rigidbody2D` that is visible sets `interpolation = Interpolate`.** Physics
+  steps at 50 Hz while the display refreshes at 60 Hz+, so an uninterpolated body is drawn at a
+  stale position on frames where no step occurred and then jumps. The visual error scales with
+  velocity, so it reads as "the game stutters when things move fast". This is display-only and
+  does not touch the simulation, so it is safe against the determinism goal in
+  `ARCHITECTURE.md` §11. See `docs/ISSUES.md` L3.
+- **Cameras and anything else that follows a physics body do so in `LateUpdate`**, never
+  `Update`. Interpolated poses are applied to transforms after `Update` runs; following in
+  `Update` reads the raw stepped pose and reintroduces the judder interpolation just removed.
 - Gameplay randomness uses the seeded `System.Random` in Domain; `UnityEngine.Random` is for cosmetic effects only.
 - Coroutines for simple timing; no async/await in MonoBehaviours in the POC.
 - `[SerializeField] private` instead of public fields for Inspector exposure.

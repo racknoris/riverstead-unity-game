@@ -135,6 +135,7 @@ namespace Contraption.Spike
             body.bodyType = RigidbodyType2D.Dynamic;
             body.useAutoMass = false;
             body.mass = ChassisMass;
+            body.interpolation = RigidbodyInterpolation2D.Interpolate;
 
             AddPlate(chassis, new Vector2(0f, 0f), new Vector2(2.8f, 0.30f));
             AddPlate(chassis, new Vector2(-1.25f, 0.55f), new Vector2(0.30f, 1.10f));

@@ -51,3 +51,6 @@ sysinfo.txt
 .DS_Store
 # IDE solution files
 *.slnx
+
+# Local build output
+/test*.app/

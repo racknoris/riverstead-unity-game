@@ -54,6 +54,7 @@ namespace Contraption.Spike
             {
                 body.useAutoMass = false;
                 body.mass = mass;
+                body.interpolation = RigidbodyInterpolation2D.Interpolate;
             }
 
             BoxCollider2D collider = box.AddComponent<BoxCollider2D>();
@@ -80,6 +81,7 @@ namespace Contraption.Spike
             body.bodyType = RigidbodyType2D.Dynamic;
             body.useAutoMass = false;
             body.mass = mass;
+            body.interpolation = RigidbodyInterpolation2D.Interpolate;
 
             CircleCollider2D collider = wheel.AddComponent<CircleCollider2D>();
             collider.radius = radius;

@@ -13,7 +13,16 @@ direction. Both are pinned by tests in `Assets/_Project/Tests/PlayMode/JointFide
 | # | Issue | Status |
 | --- | --- | --- |
 | L1 | **`FixedJoint2D.frequency` is inverted from intuition: `0` (the default) means *completely rigid*, and any finite value is a soft spring.** "Make the weld stiffer" invites raising it, which makes welds dramatically worse — and non-monotonically, so tuning by feel produces noise. Measured droop on a 4-link cantilever with a 4× tip mass, at 8/3 solver iterations: default/`0` → **6.18°**; `1` Hz → **96.1°**; `10` → 12.5°; `100` → 48.7°; `1000` → 151.0°; `1e6` → 148.3°. | **Understood, guarded.** Leave `frequency` at its default for welds. Never set it to buy stiffness. Pinned by `FixedJoint2D_NonZeroFrequency_IsFarSofterThanTheRigidDefault`. |
+| L3 | **`Rigidbody2D.interpolation` defaults to `None`, which looks like a performance problem and is not one.** Physics steps at 50 Hz against a 60 Hz+ display, so on frames with no physics step the body is drawn at a stale position and then jumps. Error scales with velocity, so it presents as constant low-level stutter that gets visibly worse the faster something moves. Found by playing the checkpoint, not by any test. | **Fixed, and generalised into `docs/CONVENTIONS.md`.** All visible dynamic bodies set `Interpolate`, and the camera follows in `LateUpdate` so it reads interpolated poses. Display-only, so `ARCHITECTURE.md` §11 determinism is unaffected. |
 | L2 | **`HingeJoint2D` motor sign: a *positive* `motorSpeed` on a wheel hinged under a chassis drives in +X.** The intuitive reading (negative = clockwise = forward) is backwards and cost a debugging cycle — the first wheel test failed with `travelled = -5.50`, a perfectly healthy rig driving the wrong way. | **Understood, guarded.** Pinned by `HingeJoint2D_MotorisedWheels_DriveForwardAtControllableSpeed`, which asserts on signed travel, not distance. |
+
+**Note on L3, for the Milestone 1 and 10 device passes.** The stutter it caused was nearly
+misattributed twice: first to the spike's IMGUI HUD allocating every frame, then to the raised
+16/8 solver iterations. Both were plausible, both were wrong, and the second would have been
+*confirmed* by profiling on a phone — a slower device makes a sampling artefact look exactly
+like a cost problem. It was only isolated by ruling the HUD out in a standalone build and by
+noticing the judder scaled with fall speed. **Before concluding that anything is a mobile
+performance problem, check that it is not a rendering-versus-simulation sampling artefact.**
 
 ## Open problems in the game
 
