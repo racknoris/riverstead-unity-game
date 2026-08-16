@@ -16,6 +16,23 @@ Record material architectural deviations here **before** implementing them: deci
 > than edited. Current values live in `docs/CONVENTIONS.md`, which is the thing that must never
 > hold a stale second copy.
 
+### D8 — Milestone 5 gets throwaway placeholder world content (2026-08-16)
+
+**Decision.** The Milestone 5 bootstrap creates flat ground, a distance-based finish line, and a
+camera that follows the machine. None of this is level content in the Milestone 8 sense.
+
+**Why.** `GameFlow` has five phases, two of which are Completed and Failed — but the level that
+produces those outcomes is Milestone 8. Without *something* to drive against, Milestone 5 could
+only be proven with debug buttons that force phase changes, which tests the wiring without
+testing that it works. The camera is a related gap: no milestone owns it, and a driving machine
+leaves a fixed frame immediately.
+
+**Scope.** Confined to the bootstrap MonoBehaviour in `Contraption.UI`. No placeholder terrain
+enters `Contraption.Runtime`, so Milestone 8 deletes it rather than untangling it. Explicitly
+excluded: cargo, damage, projectiles, obstacles, out-of-bounds rules.
+
+**Status.** Done. Must be replaced, not extended, by Milestone 8.
+
 ### D1 — Joint verification tests live outside `Spike/` (2026-08-15)
 
 **Decision.** Milestone 1's joint tests were written in `Assets/_Project/Tests/PlayMode/`
@@ -402,13 +419,48 @@ assigned, so real art is a drop-in rather than a code change.
 
 ## Milestone 5: Game Flow
 
-- [ ] `GameFlow` state machine: Editing / Running / Paused / Completed / Failed, with plain C# events.
-- [ ] HUD (UI Toolkit): run, pause, reset; phase-appropriate visibility.
-- [ ] `RunResult` produced on completion or failure.
+- [x] `GameFlow` state machine: Editing / Running / Paused / Completed / Failed, with plain C# events.
+- [x] HUD (UI Toolkit): run, pause, reset; phase-appropriate visibility.
+- [x] `RunResult` produced on completion or failure.
 
 ### Done when
 
-- The full phase cycle works from the UI against a hard-coded blueprint.
+- [x] The full phase cycle works from the UI against a hard-coded blueprint. **68 tests green**, and a headless run drove the whole cycle: Editing → Running → Paused → Running → Completed at 15.7 s → Editing.
+
+### Notes
+
+- **Illegal transitions throw rather than being ignored.** Pausing a run that is not running is a
+  caller bug, and swallowing it hides the bug. `GameFlow` also refuses a `Completed` phase holding
+  a `Failed` result, which would otherwise be a genuinely confusing state to debug.
+- **Pause is `Time.timeScale = 0`.** Simple, and elapsed time freezes with it, which the headless
+  run confirmed. The more surgical alternative — switching `Physics2D.simulationMode` and not
+  stepping — is what a deterministic replay would need, but that is out of scope (§11 explicitly
+  defers replay).
+- **The HUD is built in code, not UXML.** For three buttons a second file to keep in sync buys
+  nothing. Milestone 6's editor panels are where UXML starts earning its place.
+- **Buttons are disabled, not hidden, between phases**, so the control set does not move around
+  under the player's thumb.
+- The `PanelSettings`, runtime theme and scene wiring were created through Unity's own editor
+  APIs via a temporary script, then the script was deleted. Hand-writing `UIDocument`'s serialized
+  component references would have meant guessing built-in script GUIDs.
+
+### Two bugs the headless run caught, both world geometry rather than code
+
+Neither would have been visible in a still frame, and both presented identically as "the rover
+will not drive":
+
+1. **The placeholder blueprint disagreed with the catalog's hole positions.** The chassis sat
+   0.47 units above where its wheel holes actually are, so the joint yanked the machine at the
+   first physics step. A part's placed position *must* agree with the hole it attaches to, and
+   nothing currently enforces that — Milestone 6 removes the hazard by computing placement from
+   the hole, and **Milestone 7 should reject the mismatch outright**.
+2. **The finish marker was solid.** Built with the same helper as the ground, it became a wall at
+   exactly the x the completion check required, so the machine crashed into its own finish line
+   and could never reach it.
+
+This is now the third time a "physics problem" has turned out to be level geometry — after the
+Milestone 1 ramp lip and the bumps. The `docs/ISSUES.md` lesson holds: **suspect the world before
+the solver**, and get a position trace before forming a theory.
 
 ## Milestone 6: Touch Editor
 

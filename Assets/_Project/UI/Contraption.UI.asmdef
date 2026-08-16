@@ -4,7 +4,8 @@
     "references": [
         "Contraption.Domain",
         "Contraption.Runtime",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UIElementsModule"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
