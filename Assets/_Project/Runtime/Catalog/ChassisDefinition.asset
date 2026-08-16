@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 457c447e3e80e42e0adeec400b3de5b5, type: 3}
+  m_Name: ChassisDefinition
+  m_EditorClassIdentifier: 
+  _partType: 0
+  _displayName: Chassis
+  _attachmentHoleIds:
+  - hole-01
+  - hole-02
+  - hole-03
+  - hole-04
+  - hole-05
+  - hole-06
+  - hole-07
+  - hole-08
+  - hole-09
+  - hole-10
+  _mass: 2.2
+  _cost: 0
+  _prefab: {fileID: 0}
+  _friction: 1
+  _radius: 0
+  _size: {x: 2.8, y: 0.3}
+  _motorSpeedDegreesPerSecond: 0
+  _maxMotorTorque: 0
+  _hingeLimitMinDegrees: -45
+  _hingeLimitMaxDegrees: 45
+  _springFrequency: 0
+  _springDampingRatio: 0

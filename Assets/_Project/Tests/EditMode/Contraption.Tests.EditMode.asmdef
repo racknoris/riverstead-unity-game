@@ -3,6 +3,7 @@
     "rootNamespace": "Contraption.Tests.EditMode",
     "references": [
         "Contraption.Domain",
+        "Contraption.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

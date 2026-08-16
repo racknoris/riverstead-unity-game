@@ -170,7 +170,34 @@ restarts, `Tab` cycles variants; on a device, use the two on-screen buttons.
 
 ## Milestone 3: Part Catalog
 
-- [ ] `PartDefinitionAsset` ScriptableObjects for the seven initial parts, tuned from checkpoint numbers (re-derived, not pasted).
+- [x] `PartDefinitionAsset` ScriptableObjects for the seven initial parts, tuned from checkpoint numbers (re-derived, not pasted). **Eight assets, not seven:** the seven attachable parts plus `Chassis`, which is a `PartType` and needs mass and hole ids like any other. `ARCHITECTURE.md` §10 counts it separately as the thing parts attach *to*.
+- [x] `PartCatalog` asset as the single registry; a validation test asserting every `PartType` has an entry.
+- [x] Each asset exposes a plain domain `PartDefinition`.
+
+### Done when
+
+- [x] Catalog is complete and covered by the validation test. **41 tests green** across both suites.
+
+### Notes
+
+- **The rule lives in the domain, the data in the asset.** `PartCatalogValidator` is pure C# in
+  `Domain/Validation/`, per `ARCHITECTURE.md` §9's requirement that the domain validate the
+  catalog without touching Unity types. The payoff is that the rule is testable without loading
+  an asset, so `PartCatalogValidatorTests` proves it can *fail* (missing type, duplicate, empty
+  entry) and `PartCatalogAssetTests` only asks whether the shipped asset satisfies it.
+- **Validation returns a list of problems rather than throwing.** A catalog with three gaps
+  should report three; failing on the first would mean fixing it one compile cycle at a time.
+- **Values were re-derived, not pasted**, as `ARCHITECTURE.md` §14 requires. Two deliberate
+  departures from the checkpoint numbers: the generic `Hinge` part gets symmetric ±45° limits
+  rather than the spike's −35°/+55°, which were tuned for one specific sweeping arm; and
+  `PoweredWheel` costs 2 against every other part's 1, so the "use fewer parts" scoring input has
+  something to bite on. `Chassis` costs 0 — it is mandatory, not a choice.
+- **Two asset tests encode Milestone 1 lessons**: wheels must carry friction (an unmaterialed
+  wheel spins in place) and a radius (obstacle heights are judged against it).
+- `_prefab` is deliberately unassigned on every asset. Prefabs arrive with the builders in
+  Milestone 4; the field exists so the catalog is the place they land.
+- `Contraption.Tests.EditMode` now references `Contraption.Runtime`. No new asmdef, so no
+  deviation required — the dependency direction is still Tests → Runtime → Domain.
 
 ### Checkpoint tuning values (harvested before `Spike/` was deleted)
 
@@ -198,8 +225,6 @@ catalog. The originals are in git at `5fdb726` if the context around one is ever
 Level-shape numbers, for whoever builds the real level in Milestone 8: plateau top at y 1.4,
 landing top at y 0.4 (a **1.0 drop** — at 1.5 the bare rover pitched onto its back every run),
 obstacles protruding ~0.2, finish at x 58.
-- [ ] `PartCatalog` asset as the single registry; a validation test asserting every `PartType` has an entry.
-- [ ] Each asset exposes a plain domain `PartDefinition`.
 
 ### Done when
 
