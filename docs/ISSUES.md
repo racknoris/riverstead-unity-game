@@ -63,12 +63,36 @@ Other recorded results at 16/8:
   5.48 → 5.50 units on flat ground. `motorSpeed` sets speed; torque only buys climbing and
   load capacity. Tune them separately in the catalog (Milestone 3).
 
+## Measured device performance (Milestone 1)
+
+Android, development build with Autoconnect Profiler, spike scene. Device: *(TODO: model)*.
+Development builds carry profiler instrumentation, so these are pessimistic bounds, not the
+ceiling — do not read a later release-build improvement as a regression fix.
+
+| Measure | Result |
+| --- | --- |
+| `PlayerLoop` frame time | ~16 ms — i.e. **at the 60 fps cap**, not near a limit. `SpikeBootstrap` sets `targetFrameRate = 60`, so most of that is idle. Real headroom shows up as `WaitForTargetFPS` / `Gfx.WaitForPresent`. |
+| `FixedUpdate.Physics2DFixedUpdate` | **0.16 ms** typical, **0.19 ms** peak during the gap landing (peak contacts and bodies in motion) |
+| Frame spikes | None observed |
+| `GC.Alloc` | 0–0.02 ms per frame |
+
+**The solver question is answered.** Physics costs roughly **1% of the 16.67 ms frame budget**
+on device. The 16/8 iteration count raised in Milestone 1 — the one desktop-tuned value whose
+mobile cost was unverified — is comfortably affordable, with room for 32/16 if a future part
+ever needs stiffer welds. The `docs/CONVENTIONS.md` caveat about unverified mobile cost is
+retired for the POC's scale.
+
+Two limits on how far this generalises. The spike scene is small (roughly a dozen static
+bodies and eight dynamic ones); Milestone 8 adds projectiles and Milestone 6 allows ~12 player
+parts, so this is not a measurement of the finished game — but 0.16 ms leaves a lot of room to
+grow into. And no-spikes here also confirms the L3 interpolation fix holds on device.
+
 ## Risks carried over from the previous project
 
 - ~~**Joint fidelity is unproven until measured.**~~ **Retired.** Measured above; weld,
   hinge-under-limit, and motorised drive are verified with recorded numbers.
 - **A regression test counts only if it has been seen to fail.** The old hinge test passed against broken code. Every physics regression test must fail when its assertion is inverted before it is trusted. *(All nine assertions in `JointFidelityTests` have been observed failing when inverted — see `docs/TASKS.md` Milestone 1.)*
-- **Mobile frame rate is a claim until profiled on a device.** Record physics step cost and frame time in this file at Milestones 1 and 10.
+- ~~**Mobile frame rate is a claim until profiled on a device.**~~ **Discharged for Milestone 1** — measured above, on hardware. Still live for Milestone 10, when the scene is no longer trivial.
 - **Uncommitted work is lost work.** Git from Milestone 0, small commits. (Cost one fix last time.)
 - **Silent rejection is a defect.** Any editor action the game refuses must explain itself to the player (Milestone 7).
 

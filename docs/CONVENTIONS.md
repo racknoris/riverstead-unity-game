@@ -72,7 +72,10 @@ Style and project conventions, aligned with Unity's published C# style guide and
     welded-chain droop from 6.18° to 1.30° and hinge limit overshoot from 1.736° to
     0.056°. Do not lower it without re-reading the measurement table in `docs/ISSUES.md`;
     `JointFidelityTests.Physics2DSettings_Always_KeepTunedSolverIterations` fails if you do.
-    Cost on mobile is unverified until the Milestone 10 device profile.
+    Measured on an Android device in Milestone 1 at **0.16 ms per step** (0.19 ms peak),
+    about 1% of the 60 fps frame budget — affordable, with room to raise it further if a
+    future part needs stiffer welds. Re-check at Milestone 10, when the scene is no longer
+    trivial. See `docs/ISSUES.md`.
   - Gravity: `(0, -9.81)`
 
 ### Joint tuning rules (from the Milestone 1 measurements)

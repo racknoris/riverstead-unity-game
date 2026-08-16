@@ -102,7 +102,7 @@ hinge motor sign convention is backwards from the naive guess. The first one mat
 it means `ARCHITECTURE.md` §10's fallback plan ("or `RelativeJoint2D` if stiffness
 disappoints") is **not needed**. Weld stiffness was never a joint-parameter problem; it was a
 solver-iteration problem, now fixed project-wide at 16/8.
-- [ ] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `docs/ISSUES.md`. **Blocked on hardware — needs a human with a phone.** Everything on this side is ready: scripts compile against the Android target, the SDK and NDK ship with the installed module, orientation is locked to landscape, and `Assets/_Project/Scenes/Spike.unity` is scene 0 in Build Settings. The HUD is IMGUI, whose buttons take touch, so Restart and Next variant work without an EventSystem.
+- [x] Android build on a real device: touch restart works, frame time measured with the Profiler and recorded in `docs/ISSUES.md`. **Done** — runs smooth on device, physics at 0.16 ms/step (~1% of the frame budget), no spikes. Numbers and caveats in `docs/ISSUES.md`. Setup notes, since they were not obvious: `EditorSettings.m_HideBuildProfileClassicPlatforms` is `1` in this project, so platforms do not appear in the Build Profiles window until you use **+ Add Build Profile**; and the profiler needs **Development Build** plus **Autoconnect Profiler** ticked on the profile. Everything else was ready: scripts compile against the Android target, the SDK and NDK ship with the installed module, orientation is locked to landscape, and `Assets/_Project/Scenes/Spike.unity` is scene 0 in Build Settings. The HUD is IMGUI, whose buttons take touch, so Restart and Next variant work without an EventSystem.
 
 ### Done when
 
