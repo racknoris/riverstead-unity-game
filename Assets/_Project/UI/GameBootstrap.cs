@@ -81,6 +81,7 @@ namespace Contraption.UI
             _editorPanel.RotateRequested += OnRotateRequested;
             _editorPanel.RemoveRequested += OnRemoveRequested;
             _editorPanel.PaletteDismissed += OnPaletteDismissed;
+            _editorPanel.ClearRequested += OnClearRequested;
 
             _hud.RunRequested += OnRunRequested;
             _hud.PauseRequested += OnPauseRequested;
@@ -105,6 +106,7 @@ namespace Contraption.UI
             _editorPanel.RotateRequested -= OnRotateRequested;
             _editorPanel.RemoveRequested -= OnRemoveRequested;
             _editorPanel.PaletteDismissed -= OnPaletteDismissed;
+            _editorPanel.ClearRequested -= OnClearRequested;
 
             _flow.PhaseChanged -= OnPhaseChanged;
             // Leaving physics in Script mode would freeze whatever loads next, since nothing
@@ -239,6 +241,14 @@ namespace Contraption.UI
             }
 
             ApplyEdit(result);
+        }
+
+        private void OnClearRequested()
+        {
+            _selectedPartId = null;
+            _pendingHolePartId = null;
+            _editorPanel.HidePalette();
+            ApplyEdit(_editor.ClearParts());
         }
 
         private void OnPaletteDismissed()

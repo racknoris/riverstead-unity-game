@@ -37,6 +37,7 @@ namespace Contraption.UI
         private Label _selectionLabel = null!;
         private Label _rejectionLabel = null!;
         private Label _budgetLabel = null!;
+        private Button _clearButton = null!;
         private Button _rotateButton = null!;
         private Button _removeButton = null!;
         private float _rejectionUntil;
@@ -48,6 +49,8 @@ namespace Contraption.UI
         public event Action? RemoveRequested;
 
         public event Action? PaletteDismissed;
+
+        public event Action? ClearRequested;
 
         private void OnEnable()
         {
@@ -73,6 +76,13 @@ namespace Contraption.UI
             root.style.flexDirection = FlexDirection.Column;
             root.style.justifyContent = Justify.FlexEnd;
 
+            _clearButton = new Button(() => ClearRequested?.Invoke()) { text = "Clear all" };
+            _clearButton.style.minHeight = 44;
+            _clearButton.style.minWidth = 110;
+            _clearButton.style.marginLeft = 16;
+            _clearButton.style.marginBottom = 6;
+            _clearButton.style.alignSelf = Align.FlexStart;
+
             _budgetLabel = new Label(string.Empty);
             _budgetLabel.style.color = Color.white;
             _budgetLabel.style.fontSize = 16;
@@ -90,6 +100,7 @@ namespace Contraption.UI
             _palette = BuildPalette();
 
             root.Add(_budgetLabel);
+            root.Add(_clearButton);
             root.Add(_rejectionLabel);
             root.Add(_selectionPanel);
             root.Add(_palette);
@@ -209,6 +220,7 @@ namespace Contraption.UI
                 return;
             }
 
+            _clearButton.SetEnabled(used > 0);
             _budgetLabel.text = $"Parts {used} / {max}";
             _budgetLabel.style.color = used >= max
                 ? new Color(0.95f, 0.6f, 0.4f)

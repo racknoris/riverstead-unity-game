@@ -240,6 +240,41 @@ namespace Contraption.Tests.EditMode
         }
 
         [Test]
+        public void ClearParts_Always_LeavesOnlyTheChassis()
+        {
+            PartId beamId = Place(PartType.Beam, "hole-right");
+            Place(PartType.Wheel, "end-b", beamId);
+            Place(PartType.PoweredWheel, "hole-left");
+
+            EditResult result = _editor.ClearParts();
+
+            Assert.That(result.Accepted, Is.True, result.RejectionReason);
+            Assert.That(result.Blueprint.Parts.Count, Is.EqualTo(1));
+            Assert.That(result.Blueprint.Parts[0].Type, Is.EqualTo(PartType.Chassis));
+            Assert.That(result.Blueprint.Attachments, Is.Empty);
+        }
+
+        [Test]
+        public void ClearParts_OnABareChassis_IsRejectedRatherThanSilentlyDoingNothing()
+        {
+            EditResult result = _editor.ClearParts();
+
+            Assert.That(result.Accepted, Is.False);
+            Assert.That(result.RejectionReason, Is.Not.Empty);
+        }
+
+        [Test]
+        public void ClearParts_ThenPlacing_WorksAgain()
+        {
+            Place(PartType.PoweredWheel, "hole-left");
+            _editor.ClearParts();
+
+            EditResult result = _editor.PlacePart(_chassisId, new HoleId("hole-left"), PartType.Wheel);
+
+            Assert.That(result.Accepted, Is.True, result.RejectionReason);
+        }
+
+        [Test]
         public void ConfigurePart_Always_LeavesPositionAndRotationAlone()
         {
             PartId wheelId = Place(PartType.PoweredWheel, "hole-left");

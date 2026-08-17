@@ -223,6 +223,32 @@ namespace Contraption.Domain.Editing
             return Apply(ContraptionBlueprint.Create(Blueprint.LevelId, parts, attachments));
         }
 
+        /// <summary>
+        /// Strips the machine back to its roots — the chassis — discarding every placed part.
+        ///
+        /// Not validated, for the same reason removal is not: taking everything off cannot
+        /// produce an illegal machine, and refusing it would leave a player stuck with a machine
+        /// they cannot dismantle.
+        /// </summary>
+        public EditResult ClearParts()
+        {
+            var roots = new List<PlacedPart>();
+            foreach (PlacedPart part in Blueprint.Parts)
+            {
+                if (IsRoot(Blueprint, part.Id))
+                {
+                    roots.Add(part);
+                }
+            }
+
+            if (roots.Count == Blueprint.Parts.Count)
+            {
+                return EditResult.Reject("There is nothing to clear.");
+            }
+
+            return Apply(ContraptionBlueprint.Create(Blueprint.LevelId, roots, new List<Attachment>()));
+        }
+
         /// <summary>Replaces a part's configuration, leaving everything else alone.</summary>
         public EditResult ConfigurePart(PartId partId, PartConfiguration configuration)
         {
