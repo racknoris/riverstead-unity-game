@@ -105,6 +105,7 @@ namespace Contraption.UI
             palette.style.paddingBottom = 10;
             palette.style.paddingLeft = 10;
             palette.style.paddingRight = 10;
+            palette.style.justifyContent = Justify.Center;
 
             foreach (PartType partType in PlaceablePartTypes)
             {

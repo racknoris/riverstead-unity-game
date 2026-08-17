@@ -127,9 +127,15 @@ namespace Contraption.Tests.PlayMode
 
             var hinge = wheel.GetComponent<HingeJoint2D>();
 
-            // hole-01 sits at (-1.15, -0.15) in chassis-local space.
-            Assert.That(hinge.connectedAnchor.x, Is.EqualTo(-1.15f).Within(0.001f));
-            Assert.That(hinge.connectedAnchor.y, Is.EqualTo(-0.15f).Within(0.001f));
+            // Compared against the catalog rather than a copied number: hole positions are tuning
+            // and will move, and a test that hard-codes them breaks for the wrong reason.
+            _catalog.TryGetDefinition(PartType.Chassis, out PartDefinitionAsset chassis);
+            chassis.ToDomainDefinition().TryGetHole(new HoleId("hole-01"), out AttachmentHole hole);
+
+            Assert.That(hinge.connectedAnchor.x, Is.EqualTo(hole.LocalPosition.X).Within(0.001f));
+            Assert.That(hinge.connectedAnchor.y, Is.EqualTo(hole.LocalPosition.Y).Within(0.001f));
+            Assert.That(hole.LocalPosition, Is.Not.EqualTo(EditorPosition.Origin),
+                "This proves nothing unless the hole is actually offset from the part's origin.");
             Assert.That(hinge.autoConfigureConnectedAnchor, Is.False);
         }
 

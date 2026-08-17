@@ -40,8 +40,11 @@ namespace Contraption.UI
 
         private void Build(VisualElement root)
         {
-            root.style.flexDirection = FlexDirection.Column;
+            // Everything sits in one top row. The bottom belongs to the editor palette, and the
+            // two were overlapping - Run/Pause/Reset drew on top of the part buttons.
+            root.style.flexDirection = FlexDirection.Row;
             root.style.justifyContent = Justify.SpaceBetween;
+            root.style.alignItems = Align.FlexStart;
             root.pickingMode = PickingMode.Ignore;
 
             VisualElement statusPanel = Panel();
@@ -53,7 +56,7 @@ namespace Contraption.UI
             var buttonRow = new VisualElement();
             buttonRow.style.flexDirection = FlexDirection.Row;
             buttonRow.style.justifyContent = Justify.FlexEnd;
-            buttonRow.style.marginBottom = 16;
+            buttonRow.style.marginTop = 16;
             buttonRow.style.marginRight = 16;
 
             _runButton = TouchButton("Run", () => RunRequested?.Invoke());
@@ -108,16 +111,18 @@ namespace Contraption.UI
         /// Shows the phase. Buttons are *disabled* rather than hidden, so the control set does not
         /// jump around under the player's thumb between phases.
         /// </summary>
-        public void Show(GameFlow flow, float elapsedSeconds, float timeLimitSeconds)
+        public void Show(GameFlow flow, float elapsedSeconds, float timeLimitSeconds, bool hasMachine = true)
         {
-            _runButton.SetEnabled(flow.CanStartRun);
+            _runButton.SetEnabled(flow.CanStartRun && hasMachine);
             _pauseButton.SetEnabled(flow.CanPause || flow.CanResume);
             _pauseButton.text = flow.CanResume ? "Resume" : "Pause";
             _resetButton.SetEnabled(flow.CanReset);
 
             _statusLabel.text = flow.Phase switch
             {
-                GamePhase.Editing => "Editing — press Run",
+                GamePhase.Editing => hasMachine
+                    ? "Editing — press Run"
+                    : "Tap a hole on the chassis to add a part",
                 GamePhase.Running => $"Running — {elapsedSeconds:F1}s / {timeLimitSeconds:F0}s",
                 GamePhase.Paused => $"Paused — {elapsedSeconds:F1}s",
                 GamePhase.Completed => "Completed",

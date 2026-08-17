@@ -3,6 +3,7 @@ using Contraption.Domain.Blueprints;
 using Contraption.Runtime.Views;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
 namespace Contraption.UI
 {
@@ -28,6 +29,7 @@ namespace Contraption.UI
         private Camera _camera = null!;
         private BlueprintPreview _preview = null!;
         private Func<ContraptionBlueprint?> _blueprint = null!;
+        private UIDocument[] _uiDocuments = new UIDocument[0];
 
         public event Action<PartId, HoleId>? HoleTapped;
 
@@ -36,17 +38,31 @@ namespace Contraption.UI
         /// <summary>Raised when the player taps empty space, which means "deselect".</summary>
         public event Action? EmptySpaceTapped;
 
-        public void Initialise(Camera camera, BlueprintPreview preview, Func<ContraptionBlueprint?> blueprint)
+        public void Initialise(
+            Camera camera,
+            BlueprintPreview preview,
+            Func<ContraptionBlueprint?> blueprint,
+            params UIDocument[] uiDocuments)
         {
             _camera = camera;
             _preview = preview;
             _blueprint = blueprint;
+            _uiDocuments = uiDocuments ?? new UIDocument[0];
         }
 
         /// <summary>Input is read in Update (`docs/CONVENTIONS.md`).</summary>
         private void Update()
         {
             if (!TryReadTap(out Vector2 screenPosition))
+            {
+                return;
+            }
+
+            // A tap that lands on a button is not a tap on the world. Without this, choosing a
+            // part from the palette also registered as a tap on empty space, which cleared the
+            // pending hole before the button's own callback ran - so the palette closed and
+            // nothing was placed.
+            if (IsOverUserInterface(screenPosition))
             {
                 return;
             }
@@ -90,6 +106,34 @@ namespace Contraption.UI
             }
 
             screenPosition = default;
+            return false;
+        }
+
+        private bool IsOverUserInterface(Vector2 screenPosition)
+        {
+            foreach (UIDocument document in _uiDocuments)
+            {
+                if (document == null || !document.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                IPanel? panel = document.rootVisualElement?.panel;
+                if (panel == null)
+                {
+                    continue;
+                }
+
+                // Panel space has its origin at the top-left, screen space at the bottom-left.
+                Vector2 panelPosition = RuntimePanelUtils.ScreenToPanel(
+                    panel, new Vector2(screenPosition.x, Screen.height - screenPosition.y));
+
+                if (panel.Pick(panelPosition) != null)
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 

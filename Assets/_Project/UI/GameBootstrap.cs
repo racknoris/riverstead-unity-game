@@ -6,6 +6,7 @@ using Contraption.Runtime.Catalog;
 using Contraption.Runtime.Simulation;
 using Contraption.Runtime.Views;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Contraption.UI
 {
@@ -66,7 +67,12 @@ namespace Contraption.UI
             BuildPlaceholderWorld();
 
             _preview.Initialise(_catalog);
-            _touchInput.Initialise(_camera, _preview, () => _flow.Phase == GamePhase.Editing ? _editor.Blueprint : null);
+            _touchInput.Initialise(
+                _camera,
+                _preview,
+                () => _flow.Phase == GamePhase.Editing ? _editor.Blueprint : null,
+                _hud.GetComponent<UIDocument>(),
+                _editorPanel.GetComponent<UIDocument>());
             _touchInput.HoleTapped += OnHoleTapped;
             _touchInput.PartTapped += OnPartTapped;
             _touchInput.EmptySpaceTapped += OnEmptySpaceTapped;
@@ -117,7 +123,9 @@ namespace Contraption.UI
             }
 
             EvaluateRun();
-            _hud.Show(_flow, ElapsedSeconds, _timeLimitSeconds);
+            // A run with nothing built is not a run - it drops a bare chassis on the ground and
+            // ends. Better to say why the button is unavailable than to let it do that.
+            _hud.Show(_flow, ElapsedSeconds, _timeLimitSeconds, _editor.PartsUsed > 0);
         }
 
         /// <summary>

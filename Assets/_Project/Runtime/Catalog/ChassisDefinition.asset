@@ -16,31 +16,31 @@ MonoBehaviour:
   _displayName: Chassis
   _attachmentHoles:
   - Id: hole-01
-    LocalPosition: {x: -1.15, y: -0.15}
+    LocalPosition: {x: -1.15, y: -0.3}
   - Id: hole-02
-    LocalPosition: {x: 1.15, y: -0.15}
+    LocalPosition: {x: 1.15, y: -0.3}
   - Id: hole-03
-    LocalPosition: {x: -0.55, y: -0.15}
+    LocalPosition: {x: -0.4, y: -0.3}
   - Id: hole-04
-    LocalPosition: {x: 0.55, y: -0.15}
+    LocalPosition: {x: 0.4, y: -0.3}
   - Id: hole-05
-    LocalPosition: {x: -1.15, y: 0.15}
+    LocalPosition: {x: -1.15, y: 0.3}
   - Id: hole-06
-    LocalPosition: {x: 1.15, y: 0.15}
+    LocalPosition: {x: 1.15, y: 0.3}
   - Id: hole-07
-    LocalPosition: {x: -0.55, y: 0.15}
+    LocalPosition: {x: -0.4, y: 0.3}
   - Id: hole-08
-    LocalPosition: {x: 0.55, y: 0.15}
+    LocalPosition: {x: 0.4, y: 0.3}
   - Id: hole-09
-    LocalPosition: {x: -1.4, y: 0}
+    LocalPosition: {x: -1.55, y: 0}
   - Id: hole-10
-    LocalPosition: {x: 1.4, y: 0}
+    LocalPosition: {x: 1.55, y: 0}
   _mass: 2.2
   _cost: 0
   _prefab: {fileID: 0}
   _friction: 1
   _radius: 0
-  _size: {x: 2.8, y: 0.3}
+  _size: {x: 3, y: 0.6}
   _motorSpeedDegreesPerSecond: 0
   _maxMotorTorque: 0
   _hingeLimitMinDegrees: -45

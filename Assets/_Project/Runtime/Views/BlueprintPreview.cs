@@ -20,7 +20,7 @@ namespace Contraption.Runtime.Views
     public sealed class BlueprintPreview : MonoBehaviour
     {
         /// <summary>Radius of a hole marker, in world units. Big enough to hit with a thumb.</summary>
-        private const float HoleMarkerRadius = 0.22f;
+        private const float HoleMarkerRadius = 0.10f;
 
         private static readonly Color HoleColour = new Color(0.95f, 0.85f, 0.35f, 0.85f);
         private static readonly Color SelectedTint = new Color(1f, 1f, 1f, 1f);
@@ -178,6 +178,16 @@ namespace Contraption.Runtime.Views
             renderer.sprite = PrimitiveSprites.Circle();
             renderer.color = HoleColour;
             renderer.sortingOrder = 5;
+
+            // A darker centre turns the blob into a ring, so a hole reads as a socket rather
+            // than as a part sitting on the machine.
+            var centre = new GameObject("HoleCentre");
+            centre.transform.SetParent(marker.transform, worldPositionStays: false);
+            centre.transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+            SpriteRenderer centreRenderer = centre.AddComponent<SpriteRenderer>();
+            centreRenderer.sprite = PrimitiveSprites.Circle();
+            centreRenderer.color = new Color(0.12f, 0.13f, 0.16f, 0.95f);
+            centreRenderer.sortingOrder = 6;
         }
     }
 }
