@@ -574,15 +574,40 @@ the solver**, and get a position trace before forming a theory.
 
 ## Milestone 6: Touch Editor
 
-- [ ] **`BlueprintPreview`: render the blueprint statically while editing** — parts drawn from the catalog with no rigidbodies or joints, re-rendered after every edit. Deferred here deliberately from Milestone 5, which shows nothing until Run; a running simulation cannot stand in for it, since motorised dynamic bodies drive themselves away.
-- [ ] Hole-based placement: tap a hole, pick a part from a palette.
-- [ ] Rotate in fixed increments; remove; connect/disconnect supported parts.
-- [ ] Editor edits go through `ContraptionEditor` only; every edit yields a new blueprint.
-- [ ] Selected part panel showing configuration.
+- [x] **`BlueprintPreview`: render the blueprint statically while editing** — parts drawn from the catalog with no rigidbodies or joints, re-rendered after every edit. Deferred here deliberately from Milestone 5, which shows nothing until Run; a running simulation cannot stand in for it, since motorised dynamic bodies drive themselves away.
+- [x] Hole-based placement: tap a hole, pick a part from a palette.
+- [x] Rotate in fixed increments; remove; connect/disconnect supported parts. Rotation is 30° (D10); connect *is* placement and disconnect is removal (D11).
+- [x] Editor edits go through `ContraptionEditor` only; every edit yields a new blueprint.
+- [~] Selected part panel showing configuration. **Partial:** the panel shows the part's name, its rotation, and its actions, but not tunable `PartConfiguration` values — nothing currently populates one, and no part exposes an adjustable setting yet. The domain side exists (`ContraptionEditor.ConfigurePart`, covered by a test); only the UI for it is missing.
 
 ### Done when
 
-- A machine equivalent to a checkpoint variant can be built by touch alone on a device.
+- [~] A machine equivalent to a checkpoint variant can be built by touch alone on a device. **Built and verified on desktop; the device half is untested.**
+
+### Notes
+
+- **Verified headlessly by driving the editor's own handlers**: from a bare chassis, ten hole
+  markers; two powered wheels placed by tapping holes; positions derived to exactly
+  (±1.15, 0.45); a third placement onto an occupied hole refused with "Something is already
+  attached there."; then Run built 3 bodies and 2 joints from the player-made blueprint and the
+  machine drove from x=0.72 to x=4.89.
+- **The player starts from a bare chassis**, not the hard-coded rover. `PlaceholderBlueprints.Rover`
+  is now unused by the game and kept only as a test fixture.
+- **The preview is a drawing, not a paused simulation.** Hit-testing works off its own marker list
+  in world space rather than physics queries, because it has no colliders.
+- **The preview and the simulation share `PartPalette`**, so a part looks the same before and
+  after Run. Two colour tables would have drifted the first time one was edited.
+
+### A bug the headless run caught
+
+After placing a wheel, the free-hole count stayed at ten. Occupancy was only checked on the
+*parent* side of an attachment, so a child's own mount hole — a wheel's axle, which is precisely
+how the wheel is bolted on — still counted as free. The preview drew a phantom target there and
+the editor would have allowed two parts to occupy one point. Both sides now count as occupied,
+with three tests covering it.
+
+Worth noting the shape: the failure was visible only as a *number that did not change*. Nothing
+threw, nothing looked wrong on screen, and every existing test passed.
 
 ## Milestone 7: Placement Validation
 

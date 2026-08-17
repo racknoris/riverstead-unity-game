@@ -17,6 +17,22 @@ namespace Contraption.UI
         private static Sprite _square;
 
         /// <summary>
+        /// A bare chassis: the machine the player starts from and builds outward from. The
+        /// chassis is the tree's root, so its position is authored rather than derived (D12) —
+        /// it sits one wheel-radius-plus-half-a-deck above the ground so a wheel hung from an
+        /// under-deck hole lands exactly on the surface.
+        /// </summary>
+        public static ContraptionBlueprint BareChassis(string levelId)
+        {
+            return ContraptionBlueprint.Create(
+                levelId,
+                new[]
+                {
+                    new PlacedPart(ChassisId, PartType.Chassis, new EditorPosition(0f, 0.60f), PartRotation.None)
+                });
+        }
+
+        /// <summary>
         /// A chassis on two powered wheels. Hole ids match the catalog's chassis layout:
         /// hole-01 and hole-02 are the under-deck wheel mounts, at chassis-local (±1.15, −0.15).
         ///

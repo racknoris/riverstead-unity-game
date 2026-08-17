@@ -255,11 +255,17 @@ namespace Contraption.Domain.Editing
             return collected;
         }
 
+        /// <summary>
+        /// A hole is in use if an attachment touches it from *either* side. Checking only the
+        /// parent side leaves a child's own mount hole looking free — a wheel's axle is how the
+        /// wheel is bolted on, and offering it as a target would let two parts occupy one point.
+        /// </summary>
         private static bool IsHoleOccupied(ContraptionBlueprint blueprint, PartId partId, HoleId holeId)
         {
             foreach (Attachment attachment in blueprint.Attachments)
             {
-                if (attachment.FromPartId == partId && attachment.FromHoleId == holeId)
+                if ((attachment.FromPartId == partId && attachment.FromHoleId == holeId)
+                    || (attachment.ToPartId == partId && attachment.ToHoleId == holeId))
                 {
                     return true;
                 }

@@ -1,7 +1,10 @@
+using System.Collections.Generic;
 using Contraption.Domain.Blueprints;
+using Contraption.Domain.Editing;
 using Contraption.Domain.Flow;
 using Contraption.Runtime.Catalog;
 using Contraption.Runtime.Simulation;
+using Contraption.Runtime.Views;
 using UnityEngine;
 
 namespace Contraption.UI
@@ -19,6 +22,9 @@ namespace Contraption.UI
     {
         [SerializeField] private PartCatalog _catalog = null!;
         [SerializeField] private HudView _hud = null!;
+        [SerializeField] private EditorPanelView _editorPanel = null!;
+        [SerializeField] private BlueprintPreview _preview = null!;
+        [SerializeField] private EditorTouchInput _touchInput = null!;
 
         [Header("Placeholder world (Milestone 8 replaces this)")]
         [SerializeField] private float _finishLineX = 40f;
@@ -33,14 +39,23 @@ namespace Contraption.UI
         private Camera _camera = null!;
         private Vector3 _cameraHome;
         private float _elapsedSeconds;
+        private ContraptionEditor _editor = null!;
+        private PartId? _selectedPartId;
+        private PartId? _pendingHolePartId;
+        private HoleId _pendingHoleId;
 
         private void Awake()
         {
             Application.targetFrameRate = 60;
 
             _level = new LevelDefinition("level-01", "Placeholder Straight", _timeLimitSeconds, maxParts: 12);
-            _blueprint = PlaceholderBlueprints.Rover(_level.LevelId);
             _builder = new SimulationBuilder(_catalog);
+
+            // The player starts from a bare chassis and builds outward; the machine is theirs to
+            // make, not a rover handed to them.
+            _editor = new ContraptionEditor(PlaceholderBlueprints.BareChassis(_level.LevelId), DomainDefinitions());
+            _editor.BlueprintChanged += _ => RenderPreview();
+            _blueprint = _editor.Blueprint;
 
             _flow = new GameFlow();
             _flow.PhaseChanged += OnPhaseChanged;
@@ -49,9 +64,22 @@ namespace Contraption.UI
             _cameraHome = _camera.transform.position;
             BuildPlaceholderWorld();
 
+            _preview.Initialise(_catalog);
+            _touchInput.Initialise(_camera, _preview, () => _flow.Phase == GamePhase.Editing ? _editor.Blueprint : null);
+            _touchInput.HoleTapped += OnHoleTapped;
+            _touchInput.PartTapped += OnPartTapped;
+            _touchInput.EmptySpaceTapped += OnEmptySpaceTapped;
+
+            _editorPanel.PartTypeChosen += OnPartTypeChosen;
+            _editorPanel.RotateRequested += OnRotateRequested;
+            _editorPanel.RemoveRequested += OnRemoveRequested;
+            _editorPanel.PaletteDismissed += OnPaletteDismissed;
+
             _hud.RunRequested += OnRunRequested;
             _hud.PauseRequested += OnPauseRequested;
             _hud.ResetRequested += OnResetRequested;
+
+            RenderPreview();
         }
 
         private void OnDestroy()
@@ -62,6 +90,14 @@ namespace Contraption.UI
                 _hud.PauseRequested -= OnPauseRequested;
                 _hud.ResetRequested -= OnResetRequested;
             }
+
+            _touchInput.HoleTapped -= OnHoleTapped;
+            _touchInput.PartTapped -= OnPartTapped;
+            _touchInput.EmptySpaceTapped -= OnEmptySpaceTapped;
+            _editorPanel.PartTypeChosen -= OnPartTypeChosen;
+            _editorPanel.RotateRequested -= OnRotateRequested;
+            _editorPanel.RemoveRequested -= OnRemoveRequested;
+            _editorPanel.PaletteDismissed -= OnPaletteDismissed;
 
             _flow.PhaseChanged -= OnPhaseChanged;
             // Leaving physics in Script mode would freeze whatever loads next, since nothing
@@ -112,7 +148,169 @@ namespace Contraption.UI
         private void OnRunRequested()
         {
             _elapsedSeconds = 0f;
+            // The run is built from whatever the player has made, not from a fixture.
+            _blueprint = _editor.Blueprint;
             _flow.StartRun();
+        }
+
+        // -------------------------------------------------------------------------------------
+        // Editing. Every change goes through ContraptionEditor and comes back as a new blueprint
+        // or a refusal the player can read (`ARCHITECTURE.md` §6.3).
+        // -------------------------------------------------------------------------------------
+
+        private void OnHoleTapped(PartId partId, HoleId holeId)
+        {
+            if (_flow.Phase != GamePhase.Editing)
+            {
+                return;
+            }
+
+            _pendingHolePartId = partId;
+            _pendingHoleId = holeId;
+            _editorPanel.ShowPalette();
+        }
+
+        private void OnPartTapped(PartId partId)
+        {
+            if (_flow.Phase != GamePhase.Editing)
+            {
+                return;
+            }
+
+            _selectedPartId = partId;
+            _editorPanel.HidePalette();
+            _pendingHolePartId = null;
+            RenderPreview();
+        }
+
+        private void OnEmptySpaceTapped()
+        {
+            if (_flow.Phase != GamePhase.Editing)
+            {
+                return;
+            }
+
+            _selectedPartId = null;
+            _pendingHolePartId = null;
+            _editorPanel.HidePalette();
+            RenderPreview();
+        }
+
+        private void OnPartTypeChosen(PartType partType)
+        {
+            if (_pendingHolePartId is null)
+            {
+                return;
+            }
+
+            ApplyEdit(_editor.PlacePart(_pendingHolePartId.Value, _pendingHoleId, partType));
+            _pendingHolePartId = null;
+            _editorPanel.HidePalette();
+        }
+
+        private void OnRotateRequested()
+        {
+            if (_selectedPartId.HasValue)
+            {
+                ApplyEdit(_editor.RotatePart(_selectedPartId.Value));
+            }
+        }
+
+        private void OnRemoveRequested()
+        {
+            if (!_selectedPartId.HasValue)
+            {
+                return;
+            }
+
+            EditResult result = _editor.RemovePart(_selectedPartId.Value);
+            if (result.Accepted)
+            {
+                _selectedPartId = null;
+            }
+
+            ApplyEdit(result);
+        }
+
+        private void OnPaletteDismissed()
+        {
+            _pendingHolePartId = null;
+            _editorPanel.HidePalette();
+        }
+
+        /// <summary>A refusal is shown, never swallowed (`docs/ISSUES.md`).</summary>
+        private void ApplyEdit(EditResult result)
+        {
+            if (!result.Accepted)
+            {
+                _editorPanel.ShowRejection(result.RejectionReason!);
+                return;
+            }
+
+            RenderPreview();
+        }
+
+        private void RenderPreview()
+        {
+            bool editing = _flow == null || _flow.Phase == GamePhase.Editing;
+            _editorPanel.SetVisible(editing);
+
+            if (!editing)
+            {
+                _preview.Clear();
+                return;
+            }
+
+            _preview.Render(_editor.Blueprint, _selectedPartId);
+            _editorPanel.ShowSelection(FindSelected(), SelectedDisplayName(), IsSelectedChassis());
+        }
+
+        private PlacedPart? FindSelected()
+        {
+            if (!_selectedPartId.HasValue)
+            {
+                return null;
+            }
+
+            foreach (PlacedPart part in _editor.Blueprint.Parts)
+            {
+                if (part.Id == _selectedPartId.Value)
+                {
+                    return part;
+                }
+            }
+
+            return null;
+        }
+
+        private string? SelectedDisplayName()
+        {
+            PlacedPart? part = FindSelected();
+            return part != null && _catalog.TryGetDefinition(part.Type, out PartDefinitionAsset asset)
+                ? asset.DisplayName
+                : null;
+        }
+
+        private bool IsSelectedChassis() => FindSelected()?.Type == PartType.Chassis;
+
+        private IReadOnlyDictionary<PartType, PartDefinition> DomainDefinitions()
+        {
+            var definitions = new Dictionary<PartType, PartDefinition>();
+            foreach (PartDefinitionAsset asset in _catalog.Definitions)
+            {
+                if (asset == null)
+                {
+                    continue;
+                }
+
+                PartDefinition definition = asset.ToDomainDefinition();
+                if (definition != null)
+                {
+                    definitions[asset.PartType] = definition;
+                }
+            }
+
+            return definitions;
         }
 
         private void OnPauseRequested()
@@ -145,6 +343,8 @@ namespace Contraption.UI
         /// </summary>
         private void OnPhaseChanged(GamePhase from, GamePhase to)
         {
+            RenderPreview();
+
             switch (to)
             {
                 case GamePhase.Running:

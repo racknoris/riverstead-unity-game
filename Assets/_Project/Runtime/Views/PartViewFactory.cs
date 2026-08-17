@@ -43,28 +43,8 @@ namespace Contraption.Runtime.Views
 
             SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
             renderer.sprite = isRound ? PrimitiveSprites.Circle() : PrimitiveSprites.Square();
-            renderer.color = ColourFor(definition.PartType);
+            renderer.color = PartPalette.ColourFor(definition.PartType);
         }
 
-        /// <summary>
-        /// Placeholder colours, so parts are distinguishable while building. Cosmetic only —
-        /// <c>UnityEngine.Random</c> and colour choices are explicitly allowed to be arbitrary
-        /// here, unlike gameplay values (`docs/CONVENTIONS.md`).
-        /// </summary>
-        private static Color ColourFor(PartType partType)
-        {
-            switch (partType)
-            {
-                case PartType.Chassis: return new Color(0.85f, 0.62f, 0.25f);
-                case PartType.Wheel: return new Color(0.30f, 0.32f, 0.36f);
-                case PartType.PoweredWheel: return new Color(0.22f, 0.24f, 0.28f);
-                case PartType.Beam: return new Color(0.55f, 0.70f, 0.90f);
-                case PartType.RigidConnector: return new Color(0.70f, 0.70f, 0.75f);
-                case PartType.Hinge: return new Color(0.95f, 0.80f, 0.35f);
-                case PartType.Spring: return new Color(0.55f, 0.85f, 0.65f);
-                case PartType.ProtectivePlate: return new Color(0.75f, 0.45f, 0.45f);
-                default: return Color.magenta;
-            }
-        }
     }
 }

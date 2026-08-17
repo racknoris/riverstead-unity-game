@@ -209,6 +209,37 @@ namespace Contraption.Tests.EditMode
         }
 
         [Test]
+        public void FreeHoles_APartsOwnMountHole_IsNotFree()
+        {
+            // The wheel's axle is how it is bolted to the chassis. Reporting it as free would
+            // both draw a phantom target and let two parts share one point.
+            PartId wheelId = Place(PartType.PoweredWheel, "hole-left");
+
+            Assert.That(_editor.FreeHoles(wheelId), Is.Empty);
+        }
+
+        [Test]
+        public void PlacePart_OnAPartsOwnMountHole_IsRejected()
+        {
+            PartId wheelId = Place(PartType.PoweredWheel, "hole-left");
+
+            EditResult result = _editor.PlacePart(wheelId, new HoleId("axle"), PartType.Beam);
+
+            Assert.That(result.Accepted, Is.False);
+        }
+
+        [Test]
+        public void FreeHoles_AMultiHolePart_ReportsOnlyItsUnusedEnds()
+        {
+            PartId beamId = Place(PartType.Beam, "hole-right");
+
+            IReadOnlyList<AttachmentHole> free = _editor.FreeHoles(beamId);
+
+            Assert.That(free.Count, Is.EqualTo(1));
+            Assert.That(free[0].Id.Value, Is.EqualTo("end-b"));
+        }
+
+        [Test]
         public void ConfigurePart_Always_LeavesPositionAndRotationAlone()
         {
             PartId wheelId = Place(PartType.PoweredWheel, "hole-left");
