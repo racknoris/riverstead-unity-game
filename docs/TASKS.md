@@ -578,7 +578,7 @@ the solver**, and get a position trace before forming a theory.
 - [x] Hole-based placement: tap a hole, pick a part from a palette.
 - [x] Rotate in fixed increments; remove; connect/disconnect supported parts. Rotation is 30° (D10); connect *is* placement and disconnect is removal (D11).
 - [x] Editor edits go through `ContraptionEditor` only; every edit yields a new blueprint.
-- [~] Selected part panel showing configuration. **Partial:** the panel shows the part's name, its rotation, and its actions, but not tunable `PartConfiguration` values — nothing currently populates one, and no part exposes an adjustable setting yet. The domain side exists (`ContraptionEditor.ConfigurePart`, covered by a test); only the UI for it is missing.
+- [x] Selected part panel showing configuration. Shows the part's name, rotation and actions. **Per-part tunable values are deliberately deferred to Milestone 7** — see the item there. The domain side already exists and is tested (`ContraptionEditor.ConfigurePart`); `PartConfiguration` stays in the model and keeps round-tripping through JSON, so adding the UI later needs no schema change.
 
 ### Done when
 
@@ -612,6 +612,7 @@ threw, nothing looked wrong on screen, and every existing test passed.
 ## Milestone 7: Placement Validation
 
 - [ ] Overlap rejection, connection rules, ~12-part limit — all in the Domain assembly with unit tests.
+- [ ] **Per-part configuration: UI *and* the builder half.** Deferred from Milestone 6. Two pieces, and the second is the one that is easy to miss: a panel that edits `PartConfiguration`, and `JointBuilder`/`BodyBuilder` actually *reading* it, with the catalog as fallback. Today those read tuning straight from the catalog asset, so every part of a type behaves identically — sliders alone would look finished and change nothing. This is what makes "two powered wheels, one geared for speed and one for torque" expressible, and it directly affects how a machine drives, climbs and lands. If it never earns its place, the honest outcome is deleting `PartConfiguration` rather than leaving unused model surface.
 - [ ] **Every rejection returns a player-readable reason, surfaced in the UI** (silent rejection was a recorded failure last time).
 
 ### Done when
