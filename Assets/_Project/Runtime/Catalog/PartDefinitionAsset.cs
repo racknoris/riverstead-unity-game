@@ -109,7 +109,11 @@ namespace Contraption.Runtime.Catalog
                     new EditorPosition(hole.LocalPosition.x, hole.LocalPosition.y)));
             }
 
-            return new PartDefinition(_partType, _displayName, _mass, _cost, holes);
+            PartShape shape = _radius > 0f
+                ? PartShape.Circle(_radius)
+                : PartShape.Box(Mathf.Max(_size.x, 0.01f), Mathf.Max(_size.y, 0.01f));
+
+            return new PartDefinition(_partType, _displayName, _mass, _cost, holes, shape);
         }
         /// <summary>
         /// Inspector shape for one hole. A nested serializable struct rather than parallel arrays,

@@ -32,9 +32,11 @@ namespace Contraption.UI
         };
 
         private VisualElement _palette = null!;
+        private readonly Dictionary<PartType, Button> _paletteButtons = new Dictionary<PartType, Button>();
         private VisualElement _selectionPanel = null!;
         private Label _selectionLabel = null!;
         private Label _rejectionLabel = null!;
+        private Label _budgetLabel = null!;
         private Button _rotateButton = null!;
         private Button _removeButton = null!;
         private float _rejectionUntil;
@@ -71,6 +73,12 @@ namespace Contraption.UI
             root.style.flexDirection = FlexDirection.Column;
             root.style.justifyContent = Justify.FlexEnd;
 
+            _budgetLabel = new Label(string.Empty);
+            _budgetLabel.style.color = Color.white;
+            _budgetLabel.style.fontSize = 16;
+            _budgetLabel.style.marginLeft = 16;
+            _budgetLabel.style.marginBottom = 4;
+
             _rejectionLabel = new Label(string.Empty);
             _rejectionLabel.style.color = new Color(1f, 0.55f, 0.55f);
             _rejectionLabel.style.fontSize = 18;
@@ -81,6 +89,7 @@ namespace Contraption.UI
             _selectionPanel = BuildSelectionPanel();
             _palette = BuildPalette();
 
+            root.Add(_budgetLabel);
             root.Add(_rejectionLabel);
             root.Add(_selectionPanel);
             root.Add(_palette);
@@ -107,6 +116,7 @@ namespace Contraption.UI
                 button.style.minWidth = 130;
                 button.style.minHeight = 56;
                 button.style.fontSize = 16;
+                _paletteButtons[partType] = button;
                 palette.Add(button);
             }
 
@@ -152,7 +162,19 @@ namespace Contraption.UI
             return panel;
         }
 
-        public void ShowPalette() => _palette.style.display = DisplayStyle.Flex;
+        /// <summary>
+        /// Opens the palette with only the parts that will actually fit enabled. Offering a
+        /// choice and then refusing it is a worse experience than not offering it.
+        /// </summary>
+        public void ShowPalette(Func<PartType, bool> canPlace)
+        {
+            foreach (KeyValuePair<PartType, Button> entry in _paletteButtons)
+            {
+                entry.Value.SetEnabled(canPlace(entry.Key));
+            }
+
+            _palette.style.display = DisplayStyle.Flex;
+        }
 
         public void HidePalette() => _palette.style.display = DisplayStyle.None;
 
@@ -172,6 +194,24 @@ namespace Contraption.UI
             _selectionLabel.text = $"{partDisplayName ?? part.Type.ToString()}   {part.Rotation.Degrees}°";
             _rotateButton.SetEnabled(!isChassis);
             _removeButton.SetEnabled(!isChassis);
+        }
+
+        /// <summary>
+        /// Shows how much of the part budget is spent, and warns as it runs out. A limit the
+        /// player can see coming is not the same experience as one they collide with.
+        /// </summary>
+        public void ShowPartBudget(int used, int max)
+        {
+            if (max == int.MaxValue)
+            {
+                _budgetLabel.text = string.Empty;
+                return;
+            }
+
+            _budgetLabel.text = $"Parts {used} / {max}";
+            _budgetLabel.style.color = used >= max
+                ? new Color(0.95f, 0.6f, 0.4f)
+                : Color.white;
         }
 
         public void ShowRejection(string reason)

@@ -53,7 +53,8 @@ namespace Contraption.UI
 
             // The player starts from a bare chassis and builds outward; the machine is theirs to
             // make, not a rover handed to them.
-            _editor = new ContraptionEditor(PlaceholderBlueprints.BareChassis(_level.LevelId), DomainDefinitions());
+            _editor = new ContraptionEditor(
+                PlaceholderBlueprints.BareChassis(_level.LevelId), DomainDefinitions(), _level.MaxParts);
             _editor.BlueprintChanged += _ => RenderPreview();
             _blueprint = _editor.Blueprint;
 
@@ -167,7 +168,7 @@ namespace Contraption.UI
 
             _pendingHolePartId = partId;
             _pendingHoleId = holeId;
-            _editorPanel.ShowPalette();
+            _editorPanel.ShowPalette(type => _editor.CanPlace(partId, holeId, type));
         }
 
         private void OnPartTapped(PartId partId)
@@ -263,6 +264,9 @@ namespace Contraption.UI
 
             _preview.Render(_editor.Blueprint, _selectedPartId);
             _editorPanel.ShowSelection(FindSelected(), SelectedDisplayName(), IsSelectedChassis());
+            // Showing the budget is part of never refusing without explanation: the player should
+            // see the limit approaching rather than meet it as a surprise.
+            _editorPanel.ShowPartBudget(_editor.PartsUsed, _editor.MaxParts);
         }
 
         private PlacedPart? FindSelected()

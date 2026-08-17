@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Contraption.Domain.Blueprints;
+using Contraption.Domain.Validation;
 
 namespace Contraption.Domain.Editing
 {
@@ -25,11 +26,13 @@ namespace Contraption.Domain.Editing
         public const int RotationStepDegrees = 30;
 
         private readonly IReadOnlyDictionary<PartType, PartDefinition> _definitions;
+        private readonly int _maxParts;
         private int _nextId = 1;
 
         public ContraptionEditor(
             ContraptionBlueprint blueprint,
-            IReadOnlyDictionary<PartType, PartDefinition> definitions)
+            IReadOnlyDictionary<PartType, PartDefinition> definitions,
+            int maxParts = int.MaxValue)
         {
             if (blueprint is null)
             {
@@ -37,6 +40,7 @@ namespace Contraption.Domain.Editing
             }
 
             _definitions = definitions ?? throw new ArgumentNullException(nameof(definitions));
+            _maxParts = maxParts;
             // A blueprint handed in from outside - loaded from disk, hard-coded in a fixture - is
             // no more trustworthy than one being edited. Normalise it before anyone reads it.
             Blueprint = BlueprintLayout.Normalise(blueprint, _definitions);
@@ -53,34 +57,61 @@ namespace Contraption.Domain.Editing
         /// </summary>
         public EditResult PlacePart(PartId parentPartId, HoleId parentHoleId, PartType partType)
         {
+            string? problem = TryBuildPlacement(
+                parentPartId, parentHoleId, partType, reserveIds: true, out ContraptionBlueprint? candidate);
+
+            return problem != null ? EditResult.Reject(problem) : Apply(candidate!);
+        }
+
+        /// <summary>
+        /// Computes what the blueprint *would* become, without changing anything.
+        ///
+        /// Shared by <see cref="PlacePart"/> and <see cref="CanPlace"/> so the palette's idea of
+        /// what is allowed can never drift from what placement actually does. Returns a
+        /// player-readable problem, or null and a candidate blueprint.
+        /// </summary>
+        private string? TryBuildPlacement(
+            PartId parentPartId,
+            HoleId parentHoleId,
+            PartType partType,
+            bool reserveIds,
+            out ContraptionBlueprint? candidate)
+        {
+            candidate = null;
+
             if (!TryFindPart(Blueprint, parentPartId, out PlacedPart parent))
             {
-                return EditResult.Reject("That part is no longer on the machine.");
+                return "That part is no longer on the machine.";
             }
 
             if (!_definitions.TryGetValue(parent.Type, out PartDefinition parentDefinition)
                 || !parentDefinition.TryGetHole(parentHoleId, out AttachmentHole parentHole))
             {
-                return EditResult.Reject($"A {parent.Type} has no such attachment point.");
+                return $"A {parent.Type} has no such attachment point.";
             }
 
             if (IsHoleOccupied(Blueprint, parentPartId, parentHoleId))
             {
-                return EditResult.Reject("Something is already attached there.");
+                return "Something is already attached there.";
             }
 
             if (!_definitions.TryGetValue(partType, out PartDefinition definition)
                 || definition.AttachmentHoles.Count == 0)
             {
-                return EditResult.Reject($"A {partType} cannot be attached to anything.");
+                return $"A {partType} cannot be attached to anything.";
             }
 
             // The child hangs by its first hole. Which end of a beam mounts is a refinement for
-            // Milestone 7, not something the editor needs to work.
+            // a later pass, not something the editor needs to work.
             AttachmentHole mountHole = definition.AttachmentHoles[0];
 
+            // A dry run must not burn ids, or repeatedly asking "could I?" would drift the
+            // numbering of parts the player actually places.
+            int partNumber = reserveIds ? _nextId++ : _nextId;
+            int attachmentNumber = reserveIds ? _nextId++ : _nextId + 1;
+
             var newPart = new PlacedPart(
-                NextPartId(partType),
+                new PartId($"{partType}-{partNumber}".ToLowerInvariant()),
                 partType,
                 PartLayout.PositionChild(
                     parent.Position, parent.Rotation, parentHole.LocalPosition,
@@ -88,13 +119,36 @@ namespace Contraption.Domain.Editing
                 PartRotation.None);
 
             var attachment = new Attachment(
-                NextAttachmentId(), parentPartId, parentHoleId, newPart.Id, mountHole.Id);
+                new AttachmentId($"attach-{attachmentNumber}"),
+                parentPartId, parentHoleId, newPart.Id, mountHole.Id);
 
             var parts = new List<PlacedPart>(Blueprint.Parts) { newPart };
             var attachments = new List<Attachment>(Blueprint.Attachments) { attachment };
 
-            return Apply(ContraptionBlueprint.Create(Blueprint.LevelId, parts, attachments));
+            ContraptionBlueprint laidOut = BlueprintLayout.Normalise(
+                ContraptionBlueprint.Create(Blueprint.LevelId, parts, attachments), _definitions);
+
+            string? ruleProblem = PlacementRules.FindProblem(laidOut, _definitions, _maxParts);
+            if (ruleProblem != null)
+            {
+                return ruleProblem;
+            }
+
+            candidate = laidOut;
+            return null;
         }
+
+        /// <summary>
+        /// Whether a part could be placed here, without placing it.
+        ///
+        /// This exists so the palette can offer only what will work. "Invalid edits are impossible
+        /// and the player is always told why" is better served by not presenting the impossible
+        /// edit than by explaining the refusal afterwards — the chassis has holes close enough
+        /// together that a wheel physically cannot go in both, and discovering that by being
+        /// refused six times is not a good editor.
+        /// </summary>
+        public bool CanPlace(PartId parentPartId, HoleId parentHoleId, PartType partType) =>
+            TryBuildPlacement(parentPartId, parentHoleId, partType, reserveIds: false, out _) == null;
 
         /// <summary>
         /// Turns a part by one snap step. The part pivots about its mount hole, so it stays
@@ -124,7 +178,7 @@ namespace Contraption.Domain.Editing
             }
 
             return Apply(ContraptionBlueprint.Create(
-                Blueprint.LevelId, parts, new List<Attachment>(Blueprint.Attachments)));
+                Blueprint.LevelId, parts, new List<Attachment>(Blueprint.Attachments)), validate: true);
         }
 
         /// <summary>
@@ -210,13 +264,37 @@ namespace Contraption.Domain.Editing
             return free;
         }
 
+        /// <summary>Parts the player has spent, not counting the chassis.</summary>
+        public int PartsUsed => PlacementRules.CountPlayerParts(Blueprint);
+
+        public int MaxParts => _maxParts;
+
         /// <summary>
-        /// Rebuilds every part's position from the attachment tree, then publishes the result.
-        /// Running this after each edit is what keeps placement and holes in agreement.
+        /// Rebuilds every part's position from the attachment tree, checks the placement rules,
+        /// then publishes the result.
+        ///
+        /// Positions are recomputed *before* validating, because the rules are about where parts
+        /// actually end up — checking the pre-layout positions would judge a machine that never
+        /// exists.
+        ///
+        /// Removal is never validated. Taking a part off cannot create an overlap or exceed a
+        /// budget, and refusing it would trap a player whose machine is already over the limit
+        /// with no way back.
         /// </summary>
-        private EditResult Apply(ContraptionBlueprint blueprint)
+        private EditResult Apply(ContraptionBlueprint blueprint, bool validate = false)
         {
-            Blueprint = BlueprintLayout.Normalise(blueprint, _definitions);
+            ContraptionBlueprint candidate = BlueprintLayout.Normalise(blueprint, _definitions);
+
+            if (validate)
+            {
+                string? problem = PlacementRules.FindProblem(candidate, _definitions, _maxParts);
+                if (problem != null)
+                {
+                    return EditResult.Reject(problem);
+                }
+            }
+
+            Blueprint = candidate;
             BlueprintChanged?.Invoke(Blueprint);
             return EditResult.Accept(Blueprint);
         }
@@ -289,8 +367,5 @@ namespace Contraption.Domain.Editing
             return false;
         }
 
-        private PartId NextPartId(PartType partType) => new PartId($"{partType}-{_nextId++}".ToLowerInvariant());
-
-        private AttachmentId NextAttachmentId() => new AttachmentId($"attach-{_nextId++}");
     }
 }

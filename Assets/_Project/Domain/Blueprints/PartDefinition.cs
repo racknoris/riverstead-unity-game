@@ -21,7 +21,8 @@ namespace Contraption.Domain.Blueprints
             string displayName,
             float mass,
             int cost,
-            IReadOnlyList<AttachmentHole>? attachmentHoles = null)
+            IReadOnlyList<AttachmentHole>? attachmentHoles = null,
+            PartShape? shape = null)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -37,6 +38,9 @@ namespace Contraption.Domain.Blueprints
             DisplayName = displayName;
             Mass = mass;
             Cost = cost;
+            // A part with no declared shape is treated as a small box, so an incomplete catalog
+            // entry cannot silently switch overlap checking off for that part.
+            Shape = shape ?? PartShape.Box(0.5f, 0.5f);
             _attachmentHoles = attachmentHoles is null
                 ? Array.Empty<AttachmentHole>()
                 : CopyOf(attachmentHoles);
@@ -50,6 +54,9 @@ namespace Contraption.Domain.Blueprints
 
         /// <summary>Budget cost, for the "use fewer parts" scoring input (`ARCHITECTURE.md` §2).</summary>
         public int Cost { get; }
+
+        /// <summary>Coarse size, used only to judge whether placements overlap.</summary>
+        public PartShape Shape { get; }
 
         /// <summary>The holes this part offers for others to attach to, with their local positions.</summary>
         public IReadOnlyList<AttachmentHole> AttachmentHoles => _attachmentHoles;
@@ -87,13 +94,14 @@ namespace Contraption.Domain.Blueprints
                 && DisplayName == other.DisplayName
                 && Mass.Equals(other.Mass)
                 && Cost == other.Cost
+                && Shape.Equals(other.Shape)
                 && ValueEquality.SequenceEquals(_attachmentHoles, other._attachmentHoles);
         }
 
         public override int GetHashCode()
         {
             return HashCode.Combine(
-                Type, DisplayName, Mass, Cost, ValueEquality.SequenceHashCode(_attachmentHoles));
+                Type, DisplayName, Mass, Cost, Shape, ValueEquality.SequenceHashCode(_attachmentHoles));
         }
 
         private static AttachmentHole[] CopyOf(IReadOnlyList<AttachmentHole> source)

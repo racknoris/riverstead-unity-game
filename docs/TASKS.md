@@ -611,13 +611,43 @@ threw, nothing looked wrong on screen, and every existing test passed.
 
 ## Milestone 7: Placement Validation
 
-- [ ] Overlap rejection, connection rules, ~12-part limit — all in the Domain assembly with unit tests.
+- [x] Overlap rejection, connection rules, ~12-part limit — all in the Domain assembly with unit tests. `PlacementRules` in `Domain/Validation/`; the part budget comes from `LevelDefinition.MaxParts`.
 - [ ] **Per-part configuration: UI *and* the builder half.** Deferred from Milestone 6. Two pieces, and the second is the one that is easy to miss: a panel that edits `PartConfiguration`, and `JointBuilder`/`BodyBuilder` actually *reading* it, with the catalog as fallback. Today those read tuning straight from the catalog asset, so every part of a type behaves identically — sliders alone would look finished and change nothing. This is what makes "two powered wheels, one geared for speed and one for torque" expressible, and it directly affects how a machine drives, climbs and lands. If it never earns its place, the honest outcome is deleting `PartConfiguration` rather than leaving unused model surface.
-- [ ] **Every rejection returns a player-readable reason, surfaced in the UI** (silent rejection was a recorded failure last time).
+- [x] **Every rejection returns a player-readable reason, surfaced in the UI** (silent rejection was a recorded failure last time). A test asserts every refusal is a sentence, ends in a full stop, and contains no identifiers — the weak form of silent rejection is a message only a programmer understands.
 
 ### Done when
 
-- Invalid edits are impossible and the player is always told why.
+- [x] Invalid edits are impossible and the player is always told why. **105 tests green.**
+
+### Notes
+
+- **The palette only offers what will work.** `ContraptionEditor.CanPlace` runs the real placement
+  path and discards the result, so the buttons can never disagree with what placement actually
+  does — a test asserts exactly that agreement across several holes. This came out of a headless
+  run: with a 6-part budget, six of ten chassis holes refused a wheel, because holes 0.30 apart
+  cannot both hold a 0.9-diameter wheel. The rule was right; offering the choice was the mistake.
+  "Invalid edits are impossible" is better served by not presenting the impossible edit than by
+  explaining the refusal afterwards.
+- **The dry run leaves no trace** — no blueprint change, no `BlueprintChanged`, and no consumed
+  ids. Burning ids on dry runs would have meant the palette's mere presence changing the ids of
+  parts the player later placed.
+- **Removal is never validated.** Taking a part off cannot create an overlap or exceed a budget,
+  and refusing it would trap a player whose machine is somehow already over the limit.
+- **Overlap is judged on bounding circles**, with a 0.6 allowance to buy back their generosity.
+  Deliberately coarse: a rule the player cannot predict is worse than a permissive one, and the
+  physics will punish a silly machine soon enough — more entertainingly than a refusal would.
+- **The chassis is not counted against the budget.** It is what you build on, not something you
+  spend.
+- **The budget is displayed** and turns amber when spent, so the limit is seen coming rather than
+  met as a surprise.
+
+### Not done: connection rules beyond hole availability
+
+`ARCHITECTURE.md` §10 says "connect supported parts". What is implemented is the structural half:
+a hole must exist and be free on both sides, and a machine is a tree (D11). There is no per-type
+rule saying, for instance, that a wheel may not hang off another wheel — in practice a wheel's
+only hole is consumed the moment it is attached, so the case cannot arise today. If part types
+gain more holes, this needs revisiting.
 
 ## Milestone 8: Level, Win and Fail
 
