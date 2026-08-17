@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Contraption.Domain.Blueprints;
+using Contraption.Domain.Editing;
 using Contraption.Runtime.Catalog;
 using Contraption.Runtime.Views;
 using UnityEngine;
@@ -20,6 +22,7 @@ namespace Contraption.Runtime.Simulation
         private readonly PartCatalog _catalog;
         private readonly BodyBuilder _bodyBuilder;
         private readonly JointBuilder _jointBuilder;
+        private Dictionary<PartType, PartDefinition> _domainDefinitions;
 
         public SimulationBuilder(PartCatalog catalog)
         {
@@ -34,6 +37,12 @@ namespace Contraption.Runtime.Simulation
         /// </summary>
         public SimulationRoot Build(LevelDefinition level, ContraptionBlueprint blueprint)
         {
+            // Part positions are a cache of a derived value, and this method accepts blueprints
+            // from anywhere - a fixture, a save file, the editor. Recompute them from the
+            // attachment tree rather than trusting whatever was stored, or a stale position and
+            // its joint fight each other at the first physics step (docs/TASKS.md D12).
+            blueprint = BlueprintLayout.Normalise(blueprint, DomainDefinitions());
+
             var rootObject = new GameObject("SimulationRoot");
             SimulationRoot root = rootObject.AddComponent<SimulationRoot>();
             root.Initialise(level, blueprint);
@@ -83,6 +92,32 @@ namespace Contraption.Runtime.Simulation
                     root.CountJoint();
                 }
             }
+        }
+
+        /// <summary>Projects the catalog into the plain domain definitions the layout pass needs.</summary>
+        private IReadOnlyDictionary<PartType, PartDefinition> DomainDefinitions()
+        {
+            if (_domainDefinitions != null)
+            {
+                return _domainDefinitions;
+            }
+
+            _domainDefinitions = new Dictionary<PartType, PartDefinition>();
+            foreach (PartDefinitionAsset asset in _catalog.Definitions)
+            {
+                if (asset == null)
+                {
+                    continue;
+                }
+
+                PartDefinition definition = asset.ToDomainDefinition();
+                if (definition != null)
+                {
+                    _domainDefinitions[asset.PartType] = definition;
+                }
+            }
+
+            return _domainDefinitions;
         }
 
         /// <summary>

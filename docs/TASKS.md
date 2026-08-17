@@ -16,6 +16,84 @@ Record material architectural deviations here **before** implementing them: deci
 > than edited. Current values live in `docs/CONVENTIONS.md`, which is the thing that must never
 > hold a stale second copy.
 
+### D12 — `PlacedPart.Position` is a cache; blueprints are normalised on entry (2026-08-17)
+
+**Decision.** Every blueprint arriving from outside the editor is run through
+`BlueprintLayout.Normalise`, which recomputes attached parts' positions from the attachment tree.
+Applied in the `ContraptionEditor` constructor and at the top of `SimulationBuilder.Build`.
+Milestone 9's repository must do the same on load.
+
+**Why.** D11 made positions derived *within* the editor, but the stored field is still trusted by
+everything else. A hard-coded fixture or a save file can still carry a position that disagrees
+with the hole it is attached to — which is precisely the Milestone 5 defect, where physics
+resolved the disagreement by yanking the machine apart. Normalising on entry makes the stored
+value follow the graph everywhere, not just on the editor path.
+
+**The endpoint is to stop storing it.** The truth is parts + attachments + rotations; position is
+redundant. Redundancy costs more than convenience in two places this project may reach:
+
+- *Server validation.* A stored position is something a client can forge. If the server derives
+  position from the graph and the catalog, there is no field to lie about — the whole class of
+  doctored-placement cheat disappears rather than needing a consistency check.
+- *Persistence.* Stored positions are a snapshot of the catalog at save time. Move a chassis hole
+  in a later balance pass and every saved blueprint is silently wrong; derived positions simply
+  come out right.
+
+**Why not remove the field now.** `ARCHITECTURE.md` §7 explicitly says blueprints store
+editor-space positions, so removing it is a material deviation in its own right; and §15 lists
+server validation as a non-goal, so designing for it today is speculative. Normalising on entry
+is justified purely by the defect that already happened, and is a strict stepping stone: once
+nothing trusts the stored value, deleting it is a schema bump and a few removed reads. The
+expensive direction is the reverse — building persistence around stored positions and later
+having to revalidate everything saved.
+
+**Scope.** `BlueprintLayout` (domain), the editor constructor, `SimulationBuilder.Build`.
+
+**Status.** Done for the editor and builder. **Open for Milestone 9**: the repository must
+normalise on load, or a saved blueprint reintroduces the hazard.
+
+### D11 — A contraption is a tree; placement *is* connection (2026-08-17)
+
+**Decision.** Tapping a hole and choosing a part both places and attaches it, in one action.
+Every part has exactly one parent hole, so a machine is a tree. "Disconnect" detaches a part and
+removes it. Loops — a beam bracing two existing points — are not expressible.
+
+**Why.** `ARCHITECTURE.md` §10 lists connect/disconnect as separate from placement, which invites
+a model where parts are placed first and joined afterwards. That model lets a blueprint express
+machines the builder cannot place: a part attached at two holes has an over-constrained position,
+and the two holes will not generally agree on where it should be. A tree keeps placement
+well-defined by construction.
+
+**Consequence, and it is the useful one.** Part positions become *derived* rather than authored:
+each child sits where its parent's hole puts it. That removes the hazard that bit Milestone 5,
+where a hand-authored blueprint disagreed with the catalog's hole positions and the joint yanked
+the machine apart. Positions are recomputed from the root after every edit.
+
+**Also decided: no per-hole facing** (the question left open in D7). A part is placed at a hole
+and then rotated by the player; a facing per hole would be a second, competing source of
+orientation. If a part type needs a sensible default angle, that belongs to the part, not the hole.
+
+**Scope.** `ContraptionEditor` and the blueprint's interpretation. The `Attachment` model is
+unchanged — it already expresses exactly one parent hole and one child hole.
+
+**Status.** In progress. If bracing turns out to matter for fun, it is a new entry superseding
+this one, not an edit to it.
+
+### D10 — Rotation snaps to 30° (2026-08-17)
+
+**Decision.** Parts rotate in 30° steps: twelve positions. Held as a single named constant so it
+can be changed in one place.
+
+**Why.** `ARCHITECTURE.md` §10 offers "15° or 30°" without resolving it. 30° is chunkier to hit
+with a thumb, reaches every right angle and diagonal, and halves the taps needed to spin a part
+around. 15° doubles the tap count and puts adjacent positions close enough that a device tap can
+land on the wrong one — and touch feel on a phone is the thing Milestone 1 said to protect.
+
+**Scope.** One constant in the domain editor.
+
+**Status.** Provisional, deliberately. Revisit after the Milestone 6 device test; if 30° feels
+coarse in the hand, 15° is a one-line change. Superseded by a new entry if it changes.
+
 ### D9 — Pause freezes Physics 2D rather than scaling time to zero (2026-08-16)
 
 **Decision.** Pausing sets `Physics2D.simulationMode` to `Script` and simply never calls
@@ -528,6 +606,7 @@ the solver**, and get a position trace before forming a theory.
 ## Milestone 9: Persistence
 
 - [ ] `IContraptionRepository` + JSON implementation in `persistentDataPath`.
+- [ ] **Normalise every loaded blueprint through `BlueprintLayout`** before handing it to anything — a saved position is a cache of a derived value and may be stale against a retuned catalog. See D12.
 - [ ] Current draft blueprint and level ID restored on launch; schema version checked.
 - [ ] Transient editor state (selection, tool) resets on startup.
 
